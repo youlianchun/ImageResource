@@ -11,21 +11,53 @@
 #import "TryRelay.h"
 #import <objc/runtime.h>
 
+#if __has_include(<YYImage/YYImage.h>)
+#import "YYAnimatedImageDynamicAsset.h"
+#import <YYImage/YYImage.h>
+#else
+typedef UIImage YYImage;
+#endif
+
+
 @implementation UIImage (Resource)
 + (NSBundle *)resourceBundle {
     return [NSBundle mainBundle];
 }
 
++ (void)prepareIfNeed {
+#if 0
+#if __has_include(<YYImage/YYImage.h>)
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [BundleImageProvider setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
+            return [YYImage imageWithContentsOfFile:file];
+        } inBundle:self.resourceBundle];
+        
+        if (@available(iOS 13.0, *)) {
+            [BundleImageProvider setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
+                return [YYAnimatedImageDynamicAsset assetWithImageProvider:imageProviderHandler];
+            } inBundle:self.resourceBundle];
+        }
+    });
+#endif
+#endif
+}
+
+
 + (UIImage *)pngImageNamed:(NSString *)name {
+    [self prepareIfNeed];
     return [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:self.resourceBundle];
 }
 + (UIImage *)webpImageNamed:(NSString *)name {
+    [self prepareIfNeed];
     return [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:self.resourceBundle];
 }
 + (UIImage *)jpgImageNamed:(NSString *)name {
+    [self prepareIfNeed];
     return [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:self.resourceBundle];
 }
 + (UIImage *)gifImageNamed:(NSString *)name {
+    [self prepareIfNeed];
     return [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:self.resourceBundle];
 }
 + (NSArray *)webpImageNames {

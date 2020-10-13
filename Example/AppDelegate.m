@@ -6,10 +6,6 @@
 //
 
 #import "AppDelegate.h"
-#import <BundleImage/BundleImageProvider.h>
-#import "YYAnimatedImageDynamicAsset.h"
-
-typedef UIImage YYImage;
 
 @interface AppDelegate ()
 
@@ -17,18 +13,7 @@ typedef UIImage YYImage;
 
 @implementation AppDelegate
 
-- (void)configImageProvider {
-    //采用YYImage
-//    [BundleImageProvider setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
-//        return [YYImage imageWithContentsOfFile:file];
-//    }];
-//    [BundleImageProvider setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
-//        return [YYAnimatedImageDynamicAsset assetWithImageProvider:imageProviderHandler];
-//    }];
-}
-
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    [self configImageProvider];
     // Override point for customization after application launch.
     return YES;
 }

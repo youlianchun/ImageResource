@@ -12,13 +12,18 @@
 3x: name@3x.type    name_darkmode@3x.type
 */
 
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 typedef NSString * BundleImageType;
 
-static BundleImageType const BundleImageTypePNG = @"PNG";
-static BundleImageType const BundleImageTypeWEBP = @"WEBP";
-static BundleImageType const BundleImageTypeJPG = @"JPG";
-static BundleImageType const BundleImageTypeGIF = @"GIF";
+static BundleImageType const _Nonnull BundleImageTypePNG = @"PNG";
+static BundleImageType const _Nonnull BundleImageTypeWEBP = @"WEBP";
+static BundleImageType const _Nonnull BundleImageTypeJPG = @"JPG";
+static BundleImageType const _Nonnull BundleImageTypeGIF = @"GIF";
 
-static NSString * const BundleImageDarkMode = @"_DARKMODE";
+static NSString * const _Nonnull BundleImageDarkMode = @"_DARKMODE";
+
+
+@class ImageDynamicAsset;
+typedef UIImage *_Nullable(^BundleImageProviderHandler)(NSString *_Nonnull file, BundleImageType _Nonnull type);
+typedef ImageDynamicAsset *_Nonnull(^BundleImageyDnamicAssetHandler)(UIImage *_Nullable(^_Nonnull imageProviderHandler)(UIUserInterfaceStyle style)) API_AVAILABLE(ios(13.0));

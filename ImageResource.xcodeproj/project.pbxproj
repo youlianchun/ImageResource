@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A930FC7D25234C4E00D33DEE /* TryRelay.m in Sources */ = {isa = PBXBuildFile; fileRef = A930FC7C25234C4E00D33DEE /* TryRelay.m */; };
+		A93BC6E72535D26D0088C4D8 /* BundleImageProviderBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = A93BC6E52535D26D0088C4D8 /* BundleImageProviderBundle.h */; };
+		A93BC6E82535D26D0088C4D8 /* BundleImageProviderBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A93BC6E62535D26D0088C4D8 /* BundleImageProviderBundle.m */; };
 		A958DD8125047470003CBC05 /* ImageDynamicAsset.h in Headers */ = {isa = PBXBuildFile; fileRef = A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A958DD8E250474E8003CBC05 /* BundleImageProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = A958DD8C250474E8003CBC05 /* BundleImageProvider.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A958DD9A25047520003CBC05 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A958DD9925047520003CBC05 /* AppDelegate.m */; };
@@ -111,6 +113,8 @@
 /* Begin PBXFileReference section */
 		A930FC7B25234C4D00D33DEE /* TryRelay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TryRelay.h; sourceTree = "<group>"; };
 		A930FC7C25234C4E00D33DEE /* TryRelay.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TryRelay.m; sourceTree = "<group>"; };
+		A93BC6E52535D26D0088C4D8 /* BundleImageProviderBundle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BundleImageProviderBundle.h; sourceTree = "<group>"; };
+		A93BC6E62535D26D0088C4D8 /* BundleImageProviderBundle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BundleImageProviderBundle.m; sourceTree = "<group>"; };
 		A958DD7C25047470003CBC05 /* ImageDynamicAsset.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ImageDynamicAsset.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageDynamicAsset.h; sourceTree = "<group>"; };
 		A958DD8025047470003CBC05 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -255,6 +259,8 @@
 				A98A6314250B4B4A0022C6C7 /* BundleImageCache.m */,
 				A958DD8C250474E8003CBC05 /* BundleImageProvider.h */,
 				A958DDB22504755E003CBC05 /* BundleImageProvider.m */,
+				A93BC6E52535D26D0088C4D8 /* BundleImageProviderBundle.h */,
+				A93BC6E62535D26D0088C4D8 /* BundleImageProviderBundle.m */,
 				A958DD8D250474E8003CBC05 /* Info.plist */,
 			);
 			path = BundleImage;
@@ -372,6 +378,7 @@
 			files = (
 				A98A632D250B55210022C6C7 /* BundleImageType.h in Headers */,
 				A98A632A250B50310022C6C7 /* UIImage+WebP.h in Headers */,
+				A93BC6E72535D26D0088C4D8 /* BundleImageProviderBundle.h in Headers */,
 				A98A6317250B4B4A0022C6C7 /* BundleImageBundle.h in Headers */,
 				A98A6328250B50310022C6C7 /* UIImage+GIF.h in Headers */,
 				A958DD8E250474E8003CBC05 /* BundleImageProvider.h in Headers */,
@@ -547,6 +554,7 @@
 				A958DDB42504755E003CBC05 /* BundleImageProvider.m in Sources */,
 				A98A6318250B4B4A0022C6C7 /* BundleImageCache.m in Sources */,
 				A98A632B250B50310022C6C7 /* UIImage+WebP.m in Sources */,
+				A93BC6E82535D26D0088C4D8 /* BundleImageProviderBundle.m in Sources */,
 				A98A6316250B4B4A0022C6C7 /* BundleImageBundle.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

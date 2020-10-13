@@ -9,17 +9,25 @@
 #import "BundleImageType.h"
 
 NS_ASSUME_NONNULL_BEGIN
-@class ImageDynamicAsset;
+@class BundleImageProviderBundle, BundleImageCache<KeyType, ObjectType>;
 
 @interface BundleImageProvider : NSObject
+{
+    @protected
+    NSMutableDictionary<NSString*, BundleImageProviderBundle *> *_bundleDict;
+    BundleImageCache<NSString*, UIImage *> *_cache;
+    pthread_mutex_t _mutex_t;
+}
 
 /// 设置Image构造block
 /// @param imageProvider image构建block，file 为资源完整地址，type 为文件名上的 type
-+ (void)setImageProvider:(UIImage *_Nullable(^_Nullable)(NSString *file, BundleImageType type))imageProvider;
+/// @param bundle image所在bundle
++ (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle;
 
 /// 设置 ImageDynamicAsset，自定义动态图适配
 /// @param dynamicAssetHandler 动态 image处理
-+ (void)setDynamicAssetHandler:(ImageDynamicAsset *(^_Nullable)(UIImage *_Nullable(^imageProviderHandler)(UIUserInterfaceStyle style)))dynamicAssetHandler API_AVAILABLE(ios(13.0));
+/// @param bundle image所在bundle
++ (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0));
 
 /// 获取图片完整地址
 /// @param name image name、path/name

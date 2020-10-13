@@ -6,7 +6,7 @@
 //
 
 #import "BundleImageProvider.h"
-#import "BundleImageBundle.h"
+#import "BundleImageProviderBundle.h"
 #import "BundleImageCache.h"
 #import <ImageDynamicAsset/ImageDynamicAsset.h>
 #import "UIImage+GIF.h"
@@ -14,15 +14,6 @@
 #import "pthread.h"
 
 @implementation BundleImageProvider
-{
-    NSMutableDictionary<NSString*, BundleImageBundle *> *_bundleDict;
-    BundleImageCache<NSString*, UIImage *> *_cache;
-    pthread_mutex_t _mutex_t;
-
-    UIImage *_Nullable(^_Nullable _imageProvider)(NSString *file, BundleImageType type);
-    ImageDynamicAsset *(^_Nullable _dynamicAssetHandler)(UIImage *_Nullable(^imageProviderHandler)(UIUserInterfaceStyle style)) API_AVAILABLE(ios(13.0));
-
-}
 
 static BundleImageProvider *kImageProvider = nil;
 + (instancetype)allocWithZone:(struct _NSZone *)zone {
@@ -48,14 +39,22 @@ static BundleImageProvider *kImageProvider = nil;
     return self;
 }
 
-- (BundleImageBundle *)imageBundle:(NSBundle *)bundle {
+- (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
+
+}
+
+- (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
+
+}
+
+- (BundleImageProviderBundle *)imageBundle:(NSBundle *)bundle {
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
     pthread_mutex_lock(&_mutex_t);
-    BundleImageBundle *imageBundle = _bundleDict[bundle.resourcePath];
+    BundleImageProviderBundle *imageBundle = _bundleDict[bundle.resourcePath];
     if (!imageBundle) {
-        imageBundle = [[BundleImageBundle alloc] initWithBundle:bundle];
+        imageBundle = [[BundleImageProviderBundle alloc] initWithBundle:bundle];
         _bundleDict[bundle.resourcePath] = imageBundle;
     }
     pthread_mutex_unlock(&_mutex_t);
@@ -64,20 +63,21 @@ static BundleImageProvider *kImageProvider = nil;
 
 
 - (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {
-    BundleImageBundle *imageBundle = [self imageBundle:bundle];
+    BundleImageProviderBundle *imageBundle = [self imageBundle:bundle];
     return [imageBundle imagePathForName:name type:type dark:dark];
 }
 
 - (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *)bundle {
-    BundleImageBundle *imageBundle = [self imageBundle:bundle];
+    BundleImageProviderBundle *imageBundle = [self imageBundle:bundle];
     if (@available(iOS 13.0, *)) {
         __weak typeof(self) wself = self;
         ImageDynamicAsset *ida = nil;
         UIImage *_Nullable(^imageProviderHandler)(UIUserInterfaceStyle style) = ^UIImage *_Nullable(UIUserInterfaceStyle style){
             return [wself imageNamed:name type:type dark:style == UIUserInterfaceStyleDark inBundle: imageBundle];
         };
-        if (_dynamicAssetHandler) {
-            ida = _dynamicAssetHandler(imageProviderHandler);
+        BundleImageyDnamicAssetHandler dynamicAssetHandler = imageBundle.dynamicAssetHandler;
+        if (dynamicAssetHandler) {
+            ida = dynamicAssetHandler(imageProviderHandler);
         }
         else {
             ida = [ImageDynamicAsset assetWithImageProvider:imageProviderHandler];
@@ -88,22 +88,23 @@ static BundleImageProvider *kImageProvider = nil;
     }
 }
 
-- (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type dark:(BOOL) dark inBundle:(BundleImageBundle *)bundle {
+- (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type dark:(BOOL) dark inBundle:(BundleImageProviderBundle *)bundle {
     NSString *key =  [NSString stringWithFormat:@"%@_%@", bundle.bundleKey, name];
     UIImage *image = _cache[key];
     if (!image) {
         NSString *path = [bundle imagePathForName:name type:type dark:dark];
         if (path.length > 0) {
-            image = [self imageWithContentsOfFile:path type:type];
+            image = [self imageWithContentsOfFile:path type:type inBundle:bundle];
             _cache[key] = image;
         }
     }
     return image;
 }
 
-- (UIImage *_Nullable)imageWithContentsOfFile:(NSString *)file type:(BundleImageType)type {
-    if (_imageProvider) {
-        return _imageProvider(file, type);
+- (UIImage *_Nullable)imageWithContentsOfFile:(NSString *)file type:(BundleImageType)type inBundle:(BundleImageProviderBundle *)bundle {
+    BundleImageProviderHandler imageProvider = bundle.imageProvider;
+    if (imageProvider) {
+        return imageProvider(file, type);
     }
     else {
         if ([type isEqualToString:BundleImageTypeGIF]) {
@@ -119,22 +120,16 @@ static BundleImageProvider *kImageProvider = nil;
 }
 
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *)bundle {
-    BundleImageBundle *imageBundle = [self imageBundle:bundle];
+    BundleImageProviderBundle *imageBundle = [self imageBundle:bundle];
     return [imageBundle imageNamesWithType:type];
 }
 
-+ (void)setImageProvider:(UIImage *_Nullable(^_Nullable)(NSString *file, BundleImageType type))imageProvider {
-    BundleImageProvider *ip = [self shareProvider];
-    if (ip) {
-        ip->_imageProvider = imageProvider;
-    }
++ (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
+    [[self shareProvider] setImageProvider:imageProvider inBundle:bundle];
 }
 
-+ (void)setDynamicAssetHandler:(ImageDynamicAsset *(^_Nullable)(UIImage *_Nullable(^imageProviderHandler)(UIUserInterfaceStyle style)))dynamicAssetHandler API_AVAILABLE(ios(13.0)) {
-    BundleImageProvider *ip = [self shareProvider];
-    if (ip) {
-        ip->_dynamicAssetHandler = dynamicAssetHandler;
-    }
++ (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
+    [[self shareProvider] setDynamicAssetHandler:dynamicAssetHandler inBundle:bundle];
 }
 
 + (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {

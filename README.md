@@ -7,20 +7,24 @@
 
 ## Example
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
-
 ```
 //默认方式 加载图片
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ```
 //YYImage 加载图片
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)yy_imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 } 
 ```
 ```
@@ -43,10 +47,13 @@ To run the example project, clone the repo, and run `pod install` from the Examp
     });
 }
 
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)imageNamed:(NSString *)name
     [self prepareIfNeed];
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ## Requirements
@@ -59,9 +66,20 @@ To run the example project, clone the repo, and run `pod install` from the Examp
 | 2x     | name@2x.type     | name_darkmode@2x.type     |
 | 3x     | name@3x.type     | name_darkmode@3x.type     |
 
-#### webp脚本处理
-###### >$ swift ImageScript.swift
-注意：遇到转换失败后会拷贝原图片到目标位置
+```
+    BundleImageType type = BundleImageTypePNG;// or BundleImageTypeJPG、BundleImageTypeGIF、BundleImageTypeWEBP
+    NSString *name = @"name";// or xxx/.../name
+    NSBundle *bundle = xxx;// resource bundle
+    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageType inBundle:bundle];
+```
+
+#### webp 脚本批量处理
+
+```
+> $ swift ImageScript.swift
+//注意：遇到转换失败后会拷贝原图片到目标位置
+```
+转换资源替换
 
 ## Author
 

@@ -79,6 +79,7 @@ UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageType inBun
 > $ swift ImageScript.swift
 ```
 转换完成后替换资源
+
 注意：遇到转换失败后会拷贝原图片到目标位置
 
 

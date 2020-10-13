@@ -67,19 +67,20 @@
 | 3x     | name@3x.type     | name_darkmode@3x.type     |
 
 ```
-    BundleImageType type = BundleImageTypePNG;// or BundleImageTypeJPG、BundleImageTypeGIF、BundleImageTypeWEBP
-    NSString *name = @"name";// or xxx/.../name
-    NSBundle *bundle = xxx;// resource bundle
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageType inBundle:bundle];
+BundleImageType type = BundleImageTypePNG;// or BundleImageTypeJPG、BundleImageTypeGIF、BundleImageTypeWEBP
+NSString *name = @"name";// or xxx/.../name
+NSBundle *bundle = xxx;// resource bundle
+UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageType inBundle:bundle];
 ```
 
 #### webp 脚本批量处理
 
 ```
 > $ swift ImageScript.swift
-//注意：遇到转换失败后会拷贝原图片到目标位置
 ```
-转换资源替换
+转换完成后替换资源
+注意：遇到转换失败后会拷贝原图片到目标位置
+
 
 ## Author
 

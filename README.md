@@ -137,7 +137,7 @@ image 倍图保留 [1 2 3]:
 
 ## Author
 
-YLCHUN, lianchun.you@ximalaya.com
+YLCHUN, youlianchunios@163.com
 
 ## License
 

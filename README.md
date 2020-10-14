@@ -12,16 +12,22 @@
 
 ```
 //默认方式 加载图片
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ```
 //YYImage 加载图片
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)yy_imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 } 
 ```
 ```
@@ -44,10 +50,13 @@
     });
 }
 
-+ (UIImage *)webpImageNamed:(NSString *)name
++ (UIImage *)imageNamed:(NSString *)name
     [self prepareIfNeed];
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ## Requirements
@@ -59,6 +68,7 @@
 | 1x     | name.type     | name_darkmode.type     |
 | 2x     | name@2x.type     | name_darkmode@2x.type     |
 | 3x     | name@3x.type     | name_darkmode@3x.type     |
+
 
 #### webp脚本处理
 ###### > $ swift ImageScript.swift
@@ -97,8 +107,6 @@ WebP输出目录 (默认 原图片位置):
 
 注意：遇到转换失败后会拷贝原图片到目标位置
 
-注意：Gif 转 WebP 需要采用 YYImage YYAnimatedImageView 加载图片，或者自定义 ImageProvider 创建图片
-
 ###### step 2: > $ swift ImageScript.swift      ```5```
 ```
 5
@@ -125,12 +133,7 @@ image 倍图保留 [1 2 3]:
 
 ## Installation 
 
-BundleImage is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
-
-```ruby
-pod 'BundleImage'
-```
+手动安装
 
 ## Author
 

@@ -16,7 +16,7 @@ func scriptMian()->Void {
     print("1. imageset 转WebP (cwebp)")
     print("   注: 产出增大时候会采用 [-lossless -q 100] 再次转换")
     print("2. imageset 文件名矫正")
-    print("   注: imagesetName@2x.png、imagesetName_dark@2x.png")
+    print("   注: imagesetName@2x.png、imagesetName_darkmode@2x.png")
     print("3. imageset 文件名矫正 + 转WebP")
     print("4. image 转WebP")
     print("5. image 倍图保留")
@@ -53,7 +53,7 @@ func scriptMian()->Void {
     var quality = "\(100)"
     var outDir:String?
     if input == "1" || input == "3" || input == "4" {
-        print("WebP质量 [0-100] (默认 100): ")
+        print("WebP质量 [0-100] (默认 -lossless 100): ")
         quality = waitInput("lossless")
         lossless = quality == "lossless"
         if !lossless {
@@ -309,7 +309,11 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
 }
 
 func cloneDir(dir:String, fromDir:String, toDir:String)->String? {
+    if fromDir == dir {
+        return toDir
+    }
     var fDir = fromDir
+    
     if !fDir.hasSuffix("/") {
         fDir = "\(fDir)/"
     }
@@ -485,7 +489,7 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
         if ret == 0 {
             let outSize = fileSize(path:outFile)
             print(successLog(inSize: checkSize ?? inSize, outSize: outSize, outFile: outFile))
-            let b = outSize < checkSize ?? inSize
+            let b = outSize <= checkSize ?? inSize
             return b
         }
     }
@@ -522,7 +526,7 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
                         size = outSize
                         try? FileManager.default.removeItem(atPath: oFile)
                     }
-                    let b = size < checkSize ?? inSize
+                    let b = size <= checkSize ?? inSize
                     print(successLog(inSize: checkSize ?? inSize, outSize: size, outFile: outFile))
                     return b
                 }
@@ -548,7 +552,7 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
 }
 
 func successLog(inSize:UInt64, outSize:UInt64, outFile:String)->String {
-    let b = outSize < inSize
+    let b = outSize <= inSize
     var offset:String
     if b {
         offset = "-\(formatString(Double(inSize - outSize) / 1024.0)) KB"

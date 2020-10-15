@@ -40,11 +40,11 @@ static BundleImageProvider *kImageProvider = nil;
 }
 
 - (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
-
+    [self imageBundle:bundle].imageProvider = imageProvider;
 }
 
 - (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
-
+    [self imageBundle:bundle].dynamicAssetHandler = dynamicAssetHandler;
 }
 
 - (BundleImageProviderBundle *)imageBundle:(NSBundle *)bundle {
@@ -143,4 +143,13 @@ static BundleImageProvider *kImageProvider = nil;
 + (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *)bundle {
     return [[self shareProvider] imageNamesWithType:type inBundle:bundle];
 }
+@end
+
+
+@implementation BundleImageProvider (debug)
+
++ (void)debugProvider {
+    [BundleImageBundle cleanAsset];
+}
+
 @end

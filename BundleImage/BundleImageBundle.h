@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark;
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type;
 
++ (void)cleanAsset;
 @end
 
 NS_ASSUME_NONNULL_END

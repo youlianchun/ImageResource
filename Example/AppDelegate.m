@@ -6,6 +6,9 @@
 //
 
 #import "AppDelegate.h"
+#if !RELEASE
+#import <BundleImage/BundleImageProvider.h>
+#endif
 
 @interface AppDelegate ()
 
@@ -15,6 +18,11 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+
+#if !RELEASE
+    [BundleImageProvider debugProvider];
+#endif
+    
     return YES;
 }
 

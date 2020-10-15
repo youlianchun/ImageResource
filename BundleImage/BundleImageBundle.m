@@ -113,8 +113,7 @@
     NSString *bundleKey = md5Str(relativePath);
     _bundleKey = bundleKey;
     
-    NSString *dir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    dir = [dir stringByAppendingPathComponent:@"BundleImageAsset"];
+    NSString *dir = [self.class bundleAssetDir];
     
     BOOL isDir = NO;
     BOOL isExists = [[NSFileManager defaultManager] fileExistsAtPath:dir isDirectory:&isDir];
@@ -213,6 +212,16 @@
     callback(name, exten, scale, isDark);
 }
 
++ (NSString *)bundleAssetDir {
+    NSString *dir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    dir = [dir stringByAppendingPathComponent:@"BundleImageAsset"];
+    return dir;
+}
+
++ (void)cleanAsset {
+    NSString *dir = [self bundleAssetDir];
+    [[NSFileManager defaultManager] removeItemAtPath:dir error:nil];
+}
 
 static NSString *styleKey(BOOL isDark) {
     return isDark?@"dark":@"light";

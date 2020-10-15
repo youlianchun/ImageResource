@@ -46,4 +46,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface BundleImageProvider (debug)
++ (void)debugProvider;
+@end
 NS_ASSUME_NONNULL_END

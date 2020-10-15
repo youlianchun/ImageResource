@@ -8,14 +8,14 @@
 
 ## ```注意：增减资源文件需要更新App版本号才会生效```
 BundleImageProvider 内部做了资源索引，当版本号与索引版本号不一致或不存在时候会执行更新  
-非 RELEASE 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将会清除资源索引
+DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将会清除资源索引
 ```
-#if !RELEASE
+#if DEBUG
 #import <BundleImage/BundleImageProvider.h>
 #endif
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-#if !RELEASE
+#if DEBUG
     [BundleImageProvider debugProvider];
 #endif
     return YES;

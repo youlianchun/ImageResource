@@ -10,6 +10,8 @@
 		A930FC7D25234C4E00D33DEE /* TryRelay.m in Sources */ = {isa = PBXBuildFile; fileRef = A930FC7C25234C4E00D33DEE /* TryRelay.m */; };
 		A93BC6E72535D26D0088C4D8 /* BundleImageProviderBundle.h in Headers */ = {isa = PBXBuildFile; fileRef = A93BC6E52535D26D0088C4D8 /* BundleImageProviderBundle.h */; };
 		A93BC6E82535D26D0088C4D8 /* BundleImageProviderBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = A93BC6E62535D26D0088C4D8 /* BundleImageProviderBundle.m */; };
+		A93CFE44253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h in Headers */ = {isa = PBXBuildFile; fileRef = A93CFE42253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		A93CFE45253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m in Sources */ = {isa = PBXBuildFile; fileRef = A93CFE43253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m */; };
 		A958DD8125047470003CBC05 /* ImageDynamicAsset.h in Headers */ = {isa = PBXBuildFile; fileRef = A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A958DD8E250474E8003CBC05 /* BundleImageProvider.h in Headers */ = {isa = PBXBuildFile; fileRef = A958DD8C250474E8003CBC05 /* BundleImageProvider.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		A958DD9A25047520003CBC05 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A958DD9925047520003CBC05 /* AppDelegate.m */; };
@@ -115,6 +117,9 @@
 		A930FC7C25234C4E00D33DEE /* TryRelay.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TryRelay.m; sourceTree = "<group>"; };
 		A93BC6E52535D26D0088C4D8 /* BundleImageProviderBundle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BundleImageProviderBundle.h; sourceTree = "<group>"; };
 		A93BC6E62535D26D0088C4D8 /* BundleImageProviderBundle.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BundleImageProviderBundle.m; sourceTree = "<group>"; };
+		A93CFE42253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+ImageDynamicAsset.h"; sourceTree = "<group>"; };
+		A93CFE43253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+ImageDynamicAsset.m"; sourceTree = "<group>"; };
+		A93CFE4A253A82CC00DD8C48 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		A958DD7C25047470003CBC05 /* ImageDynamicAsset.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ImageDynamicAsset.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageDynamicAsset.h; sourceTree = "<group>"; };
 		A958DD8025047470003CBC05 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -215,6 +220,7 @@
 		A958DD702504744F003CBC05 = {
 			isa = PBXGroup;
 			children = (
+				A93CFE4A253A82CC00DD8C48 /* README.md */,
 				A958DD7E25047470003CBC05 /* ImageDynamicAsset */,
 				A958DD8B250474E8003CBC05 /* BundleImage */,
 				A958DD9725047520003CBC05 /* Example */,
@@ -240,6 +246,8 @@
 			children = (
 				A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */,
 				A958DDAF2504753E003CBC05 /* ImageDynamicAsset.m */,
+				A93CFE42253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h */,
+				A93CFE43253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m */,
 				A958DD8025047470003CBC05 /* Info.plist */,
 			);
 			path = ImageDynamicAsset;
@@ -369,6 +377,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A958DD8125047470003CBC05 /* ImageDynamicAsset.h in Headers */,
+				A93CFE44253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +551,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A93CFE45253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m in Sources */,
 				A958DDB02504753E003CBC05 /* ImageDynamicAsset.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1010,6 +1020,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = Example/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_GENERATE_MAP_FILE = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1080,6 +1091,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = Example/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_GENERATE_MAP_FILE = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

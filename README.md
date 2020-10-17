@@ -1,15 +1,45 @@
-# BundleImage
+# ImageResource
 
 [![CI Status](https://img.shields.io/travis/YLCHUN/BundleImage.svg?style=flat)](https://travis-ci.org/YLCHUN/BundleImage)
 [![Version](https://img.shields.io/cocoapods/v/BundleImage.svg?style=flat)](https://cocoapods.org/pods/BundleImage)
 [![License](https://img.shields.io/cocoapods/l/BundleImage.svg?style=flat)](https://cocoapods.org/pods/BundleImage)
 [![Platform](https://img.shields.io/cocoapods/p/BundleImage.svg?style=flat)](https://cocoapods.org/pods/BundleImage)
 
+```ImageDynamicAsset```  UIImage 暗黑模式适配
 
-## ```注意：增减资源文件需要更新App版本号才会生效```
+```BundleImage```  bundle 内图片访问管理；通过图片名获取图片，支持：目录、倍图、暗黑。
+
+## Example （ImageDynamicAsset）
+
+```
++ (instancetype _Nullable)imageWithLight:(UIImage *)light dark:(UIImage *)dark {
+    if (!dark) return light;
+    if (!light) return dark;
+    
+    if (@available(iOS 13.0, *)) {
+        return [self imageWithDynamicProvider:^UIImage * _Nullable(UIUserInterfaceStyle style) {
+            if (style == UIUserInterfaceStyleDark) {
+                return dark;
+            }else {
+                return light;
+            }
+        }];
+    }
+    else {
+        return light;
+    }
+}
+```
+注意：采用UIImageAsset 实现暗黑适配存在内存泄漏。
+
+## Example （BundleImage）
+
+```
+//开启 debug
+/*
 BundleImageProvider 内部做了资源索引，当版本号与索引版本号不一致或不存在时候会执行更新  
 DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将会清除资源索引
-```
+*/
 #if DEBUG
 #import <BundleImage/BundleImageProvider.h>
 #endif
@@ -21,8 +51,6 @@ DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将�
     return YES;
 }
 ```
-
-## Example
 
 ```
 //默认方式 加载图片

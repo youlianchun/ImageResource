@@ -7,17 +7,10 @@
 //
 
 #import "UIImage+Dynamic.h"
-#import <ImageDynamicAsset/ImageDynamicAsset.h>
 
 #pragma mark -
 
 @implementation UIImage (Dynamic)
-
-+ (instancetype _Nullable)imageWithDynamicProvider:(UIImage *_Nullable(^)(UIUserInterfaceStyle style))dynamicProvider API_AVAILABLE(ios(13.0)) {
-    if (!dynamicProvider) return nil;
-    ImageDynamicAsset *asset = [[ImageDynamicAsset alloc] initWithImageProvider:dynamicProvider];
-    return [asset resolvedImageWithStyle:[UITraitCollection currentTraitCollection].userInterfaceStyle];
-}
 
 + (instancetype _Nullable)imageWithLight:(UIImage *)light dark:(UIImage *)dark {
     if (!dark) return light;
@@ -35,10 +28,6 @@
     else {
         return light;
     }
-}
-
-- (UIImage *)dynamicProviderRawImage API_AVAILABLE(ios(13.0)) {
-    return [ImageDynamicAsset rawImageFromDynamicAssetImage:self];
 }
 
 - (UIImage *)blendWithColor:(UIColor *)color {

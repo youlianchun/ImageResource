@@ -120,6 +120,7 @@
 		A93CFE42253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+ImageDynamicAsset.h"; sourceTree = "<group>"; };
 		A93CFE43253A7ED100DD8C48 /* UIImage+ImageDynamicAsset.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "UIImage+ImageDynamicAsset.m"; sourceTree = "<group>"; };
 		A93CFE4A253A82CC00DD8C48 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A93CFE4B253A875D00DD8C48 /* Theory */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Theory; sourceTree = "<group>"; };
 		A958DD7C25047470003CBC05 /* ImageDynamicAsset.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ImageDynamicAsset.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A958DD7F25047470003CBC05 /* ImageDynamicAsset.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageDynamicAsset.h; sourceTree = "<group>"; };
 		A958DD8025047470003CBC05 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -220,6 +221,7 @@
 		A958DD702504744F003CBC05 = {
 			isa = PBXGroup;
 			children = (
+				A93CFE4B253A875D00DD8C48 /* Theory */,
 				A93CFE4A253A82CC00DD8C48 /* README.md */,
 				A958DD7E25047470003CBC05 /* ImageDynamicAsset */,
 				A958DD8B250474E8003CBC05 /* BundleImage */,

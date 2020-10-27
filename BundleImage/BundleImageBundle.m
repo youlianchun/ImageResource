@@ -314,3 +314,37 @@ static NSString *md5Str(NSString *string) {
 }
 
 @end
+
+@implementation BundleImageBundle (Dir)
+
++ (NSString *_Nullable)imagePathForDir:(NSString *)dir name:(NSString *)name type:(NSString *)type  {
+    NSString *path = nil;
+    int mainScale = (int)UIScreen.mainScreen.scale;
+    path = [self imagePathForDir:dir name:name type:type scale:mainScale];
+    if (!path) {
+        for (int scale = 3; scale > 0; scale --) {
+            if (scale == mainScale) continue;
+            path = [self imagePathForDir:dir name:name type:type scale:scale];
+            if (path.length > 0) break;
+        }
+    }
+    return path;
+}
+
++ (NSString *)imagePathForDir:(NSString *)dir name:(NSString *)name type:(NSString *)type scale:(int)scale {
+    NSString *path = [dir stringByAppendingPathComponent:name];
+    if (scale > 1) {
+        path = [path stringByAppendingFormat:@"@%dx", scale];
+    }
+    if (type) {
+        path = [path stringByAppendingPathExtension:type];
+    }
+    if ([[NSFileManager defaultManager] isReadableFileAtPath:path]) {
+        return path;
+    }
+    else {
+        return nil;
+    }
+}
+
+@end

@@ -49,4 +49,15 @@ NS_ASSUME_NONNULL_BEGIN
 @interface BundleImageProvider (debug)
 + (void)debugProvider;
 @end
+
+/// 通过资源目录直接读取，不走缓存
+@interface BundleImageProvider (Dir)
+
+/// 读取图片
+/// @param name image name
+/// @param type 类型(资源扩展名为 XMBundleImageType 小写)
+/// @param dir 资源目录
++ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inDir:(NSString *)dir;
+@end
+
 NS_ASSUME_NONNULL_END

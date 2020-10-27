@@ -153,3 +153,42 @@ static BundleImageProvider *kImageProvider = nil;
 }
 
 @end
+
+
+@implementation BundleImageProvider (Dir)
+
++ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inDir:(NSString *)dir {
+    if (@available(iOS 13.0, *)) {
+        ImageDynamicAsset *ida = [ImageDynamicAsset assetWithImageProvider:^UIImage *_Nullable(UIUserInterfaceStyle style) {
+            NSString *imgName = name;
+            if (style == UIUserInterfaceStyleDark) {
+                imgName = [imgName stringByAppendingString:BundleImageDarkMode.lowercaseString];
+            }
+            return [self _imageNamed:imgName type:type inDir:dir];
+        }];
+        return [ida resolvedImageWithStyle:[UITraitCollection currentTraitCollection].userInterfaceStyle];
+    }
+    else {
+        return [self _imageNamed:name type:type inDir:dir];
+    }
+}
+
++ (UIImage *_Nullable)_imageNamed:(NSString *)name type:(BundleImageType)type inDir:(NSString *)inDir {
+    if (name.length == 0 || type.length == 0 || inDir.length == 0) return nil;
+    NSString *path = [BundleImageBundle imagePathForDir:inDir name:name type:type.lowercaseString];
+    UIImage *image = nil;
+    if (path.length > 0) {
+        if ([type isEqualToString:BundleImageTypeGIF]) {
+           return [UIImage gifImageWithContentsOfFile:path];
+        }
+        else if ([type isEqualToString:BundleImageTypeWEBP]) {
+           return [UIImage webpImageWithContentsOfFile:path];
+        }
+        else {
+            return [UIImage imageWithContentsOfFile:path];
+        }
+    }
+    return image;
+}
+
+@end

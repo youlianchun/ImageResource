@@ -37,16 +37,16 @@
 ```
 //开启 debug
 /*
-BundleImageProvider 内部做了资源索引，当版本号与索引版本号不一致或不存在时候会执行更新  
-DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将会清除资源索引
+BundleImage 内部做了资源索引，当版本号与索引版本号不一致或不存在时候会执行更新  
+DEBUG 模式下App启动执行 ```[BundleImage debugProvider]```，将会清除资源索引
 */
 #if DEBUG
-#import <BundleImage/BundleImageProvider.h>
+#import <BundleImage/BundleImage.h>
 #endif
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 #if DEBUG
-    [BundleImageProvider debugProvider];
+    [BundleImage debugProvider];
 #endif
     return YES;
 }
@@ -56,20 +56,20 @@ DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将�
 //默认方式 加载图片
 + (UIImage *)imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImage imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ```
 //YYImage 加载图片
 + (UIImage *)yy_imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypePNG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
-    // UIImage *image = [BundleImageProvider yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 } 
 ```
 ```
@@ -78,27 +78,37 @@ DEBUG 模式下App启动执行 ```[BundleImageProvider debugProvider]```，将�
     NSBundle *bundle = xxx;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        [BundleImageProvider setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
+        [BundleImage setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
             // return UIImage
             return [UIImage imageWithContentsOfFile:file];
         } inBundle:bundle];
         
         if (@available(iOS 13.0, *)) {
-            [BundleImageProvider setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
+            [BundleImage setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
                 // return ImageDynamicAsset
                 return [ImageDynamicAsset assetWithImageProvider:imageProviderHandler];
             } inBundle:bundle];
         }
+    });
+    
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [BundleImage setImageProcess:^UIImage * _Nullable(UIImage * _Nonnull image, NSString * _Nonnull name, BundleImageType  _Nonnull type) {
+            if ([name isEqualToString:@"xxx"]) {
+                image = [image resizableImageWithCapInsets:UIEdgeInsetsMake(10, 10, 10, 10)];
+            }
+            return image;
+        } inBundle:bundle];
     });
 }
 
 + (UIImage *)imageNamed:(NSString *)name
     [self prepareIfNeed];
     NSBundle *bundle = xxx;
-    UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
-    // UIImage *image = [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
+    UIImage *image = [BundleImage imageNamed:name type:BundleImageTypePNG inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
+    // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
 ## Requirements

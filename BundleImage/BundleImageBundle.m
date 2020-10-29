@@ -14,6 +14,7 @@
     NSString *_resourceDir;
     NSDictionary *_assetDict;
     NSString *_bundleKey;
+    NSString *_relativePath;
 }
 @synthesize bundleKey = _bundleKey;
 
@@ -23,6 +24,8 @@
         bundle = [NSBundle mainBundle];
     }
     _resourceDir = bundle.resourcePath;
+    _relativePath = relativeBundlePath(_resourceDir);
+    _bundleKey = md5Str(_relativePath);
     [self assetDict];
     return self;
 }
@@ -33,7 +36,7 @@
 
 - (NSDictionary *)assetDict {
     if (!_assetDict) {
-        _assetDict = [self loadAssetBundle:_resourceDir];
+        _assetDict = [self loadAssetBundle];
     }
     return _assetDict;
 }
@@ -112,14 +115,10 @@
 }
 
 
-- (NSDictionary *)loadAssetBundle:(NSString *)resourceDir {
-    NSString *relativePath = relativeBundlePath(resourceDir);
-    if (relativePath.length == 0) {
+- (NSDictionary *)loadAssetBundle {
+    if (!_bundleKey) {
         return nil;
     }
-    NSString *bundleKey = md5Str(relativePath);
-    _bundleKey = bundleKey;
-    
     NSString *dir = [self.class bundleAssetDir];
     
     BOOL isDir = NO;
@@ -128,7 +127,7 @@
         [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
     }
     
-    NSString *assetPath = [[dir stringByAppendingPathComponent:bundleKey] stringByAppendingPathExtension:@"plist"];
+    NSString *assetPath = [[dir stringByAppendingPathComponent:_bundleKey] stringByAppendingPathExtension:@"plist"];
     
     static NSString *kContent = @"content";
     static NSString *kVersion = @"version";
@@ -138,8 +137,8 @@
     NSDictionary *asset = [NSDictionary dictionaryWithContentsOfFile:assetPath];
     if (![asset[kVersion] isEqual:version]) {
         NSMutableDictionary *newAsset = [NSMutableDictionary dictionary];
-        newAsset[kOwnerPath] = relativePath;
-        newAsset[kContent] = [self loadAsset:resourceDir];
+        newAsset[kOwnerPath] = _relativePath;
+        newAsset[kContent] = [self loadAsset:_resourceDir];
         newAsset[kVersion] = version;
         asset = [newAsset copy];
         BOOL b = [asset writeToFile:assetPath atomically:YES];

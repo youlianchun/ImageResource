@@ -1,11 +1,11 @@
 //
-//  UIImage+BI_WebP.m
+//  UIImage+BIWebP.m
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/9/5.
 //
 
-#import "UIImage+BI_WebP.h"
+#import "UIImage+BIWebP.h"
 #import <WebP/decode.h>
 #import <WebP/encode.h>
 #import <WebP/demux.h>
@@ -17,7 +17,7 @@ static void FreeImageData(void *info, const void *data, size_t size)
     free((void *)data);
 }
 
-@implementation UIImage (BI_WebP)
+@implementation UIImage (BIWebP)
 
 + (UIImage *)webpImageWithContentsOfFile:(NSString *)file {
     NSData *data = [NSData dataWithContentsOfFile:file];

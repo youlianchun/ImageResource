@@ -15,6 +15,9 @@
 
 @implementation BundleImage
 
+static NSUInteger const kBIBundleCacheCapacity = 5;
+static NSUInteger const kBIImageCacheCapacity = 50;
+
 static BundleImage *_kBundleImageShareInstance = nil;
 + (instancetype)allocWithZone:(struct _NSZone *)zone {
     static dispatch_once_t onceToken;
@@ -33,8 +36,8 @@ static BundleImage *_kBundleImageShareInstance = nil;
 
 - (instancetype)init {
     self = [super init];
-    _bundleCache = [[BundleImageCache alloc] initWithCapacity:5];
-    _imageCache = [[BundleImageCache alloc] initWithCapacity:50];
+    _bundleCache = [[BundleImageCache alloc] initWithCapacity:kBIBundleCacheCapacity];
+    _imageCache = [[BundleImageCache alloc] initWithCapacity:kBIImageCacheCapacity];
     _handlerCache = [NSMutableDictionary dictionary];
     pthread_mutex_init(&_mutex_t, NULL);
     return self;
@@ -83,11 +86,11 @@ static BundleImage *_kBundleImageShareInstance = nil;
     BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:NO];
     
     @autoreleasepool {
-        BundleImageProvider *lightIndex = [BundleImageProvider indexWithImageName:name type:type dark:NO inBundle:imageBundle cache:_imageCache];
+        BundleImageProvider *lightIndex = [BundleImageProvider providerWithImageName:name type:type dark:NO inBundle:imageBundle cache:_imageCache];
         lightIndex.provider = handler.imageProvider;
         lightIndex.process = handler.imageProcess;
         if (@available(iOS 13.0, *)) {
-            BundleImageProvider *darkIndex = [BundleImageProvider indexWithImageName:name type:type dark:YES inBundle:imageBundle cache:_imageCache];
+            BundleImageProvider *darkIndex = [BundleImageProvider providerWithImageName:name type:type dark:YES inBundle:imageBundle cache:_imageCache];
             darkIndex.provider = handler.imageProvider;
             darkIndex.process = handler.imageProcess;
 
@@ -134,7 +137,7 @@ static BundleImage *_kBundleImageShareInstance = nil;
 
 - (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
-    return [imageBundle imagePathForName:name type:imageBundle dark:dark];
+    return [imageBundle imagePathForName:name type:type dark:dark];
 }
 
 + (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {

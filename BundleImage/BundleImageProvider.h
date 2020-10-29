@@ -28,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) BundleImageProviderHandler provider;
 @property (nonatomic, copy, nullable) BundleImageProcessHandler process;
 
-+ (instancetype _Nullable)indexWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache;
++ (instancetype _Nullable)providerWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache;
 
 @end
 

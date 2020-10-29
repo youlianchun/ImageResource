@@ -1,14 +1,14 @@
 //
-//  UIImage+BI_GIF.m
+//  UIImage+BIGIF.m
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/8/30.
 //  Copyright © 2020 YLCHUN. All rights reserved.
 //
 
-#import "UIImage+BI_GIF.h"
+#import "UIImage+BIGIF.h"
 
-@implementation UIImage (BI_GIF)
+@implementation UIImage (BIGIF)
 
 + (UIImage *)gifImageWithContentsOfFile:(NSString *)file {
     NSData *data = [NSData dataWithContentsOfFile:file];

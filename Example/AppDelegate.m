@@ -18,7 +18,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
-
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"resource" ofType:@"bundle"];
+    NSBundle *bundle = [NSBundle bundleWithPath:path];
+    NSLog(@"");
 #if DEBUG
     [BundleImage debug];
 #endif

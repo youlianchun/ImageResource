@@ -8,13 +8,12 @@
 #import "BundleImageProvider.h"
 #import "BundleImageCache.h"
 #import "BundleImageBundle.h"
-#import <ImageDynamicAsset/ImageDynamicAsset.h>
-#import "UIImage+BI_GIF.h"
-#import "UIImage+BI_WebP.h"
+#import "UIImage+BIGIF.h"
+#import "UIImage+BIWebP.h"
 
 @implementation BundleImageProvider
 
-+ (instancetype _Nullable)indexWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache {
++ (instancetype _Nullable)providerWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache {
     NSString *key = [NSString stringWithFormat:@"%@_%@_%@_%@", bundle.bundleKey, name, type, @(dark)];
     
     UIImage *image = cache[key];
@@ -24,17 +23,17 @@
         path = [bundle imagePathForName:name type:type dark:dark];
     }
     
-    BundleImageProvider *index = nil;
+    BundleImageProvider *provider = nil;
     if (image || path) {
-        index = [self new];
-        index->_cache = cache;
-        index->_type = type;
-        index->_key = key;
-        index->_image = image;
-        index->_path = path;
-        index->_name = name;
+        provider = [self new];
+        provider->_cache = cache;
+        provider->_type = type;
+        provider->_key = key;
+        provider->_image = image;
+        provider->_path = path;
+        provider->_name = name;
     }
-    return index;
+    return provider;
 }
 
 - (UIImage *_Nullable)imageWithContents {
@@ -64,7 +63,9 @@
 - (UIImage *)image {
     if (!_image && _path) {
         _image = [self imageWithContents];
-        _cache[_key] = _image;
+        if (_key) {
+            _cache[_key] = _image;
+        }
     }
     return _image;
 }

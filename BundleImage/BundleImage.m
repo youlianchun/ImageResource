@@ -1,5 +1,5 @@
 //
-//  XMImageProvider.m
+//  BundleImage.m
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/8/31.

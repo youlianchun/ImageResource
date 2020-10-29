@@ -91,7 +91,7 @@
         if (!_tailNode) {
             _tailNode = node;
         }
-        if (_dict.count > _capacity && _tailNode) {
+        if (_capacity > 0 && _dict.count > _capacity && _tailNode) {
             [self removeNodeForKey:_tailNode.key];
         }
     }

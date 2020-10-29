@@ -165,7 +165,7 @@ static BundleImage *_kBundleImageShareInstance = nil;
 
 @implementation BundleImage (debug)
 
-+ (void)debugProvider {
++ (void)debug {
     [BundleImageBundle cleanAsset];
 }
 

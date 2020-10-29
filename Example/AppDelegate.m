@@ -20,7 +20,7 @@
     // Override point for customization after application launch.
 
 #if DEBUG
-    [BundleImage debugProvider];
+    [BundleImage debug];
 #endif
     
     return YES;

@@ -23,7 +23,7 @@
         bundle = [NSBundle mainBundle];
     }
     _resourceDir = bundle.resourcePath;
-    _assetDict = [self loadAssetBundle:_resourceDir];
+    [self assetDict];
     return self;
 }
 
@@ -31,9 +31,16 @@
     return [self initWithBundle:nil];
 }
 
+- (NSDictionary *)assetDict {
+    if (!_assetDict) {
+        _assetDict = [self loadAssetBundle:_resourceDir];
+    }
+    return _assetDict;
+}
+
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type {
     if (type.length == 0) return nil;
-    return [[_assetDict[type] allKeys] copy];
+    return [[[self assetDict][type] allKeys] copy];
 }
 
 - (NSArray *)extenCheckArr {
@@ -80,7 +87,7 @@
         shotName = name;
     }
     
-    NSArray<NSString *> *arr = _assetDict[type][shotName][styleKey(dark)][[NSString stringWithFormat:@"%@", @(scale)]];
+    NSArray<NSString *> *arr = [self assetDict][type][shotName][styleKey(dark)][[NSString stringWithFormat:@"%@", @(scale)]];
     NSString *relativePath = nil;
     if (namePath) {
         for (NSString *path in arr) {
@@ -311,40 +318,6 @@ static NSString *md5Str(NSString *string) {
         [output appendFormat:@"%02x", digest[i]];
     
     return output;
-}
-
-@end
-
-@implementation BundleImageBundle (Dir)
-
-+ (NSString *_Nullable)imagePathForDir:(NSString *)dir name:(NSString *)name type:(NSString *)type  {
-    NSString *path = nil;
-    int mainScale = (int)UIScreen.mainScreen.scale;
-    path = [self imagePathForDir:dir name:name type:type scale:mainScale];
-    if (!path) {
-        for (int scale = 3; scale > 0; scale --) {
-            if (scale == mainScale) continue;
-            path = [self imagePathForDir:dir name:name type:type scale:scale];
-            if (path.length > 0) break;
-        }
-    }
-    return path;
-}
-
-+ (NSString *)imagePathForDir:(NSString *)dir name:(NSString *)name type:(NSString *)type scale:(int)scale {
-    NSString *path = [dir stringByAppendingPathComponent:name];
-    if (scale > 1) {
-        path = [path stringByAppendingFormat:@"@%dx", scale];
-    }
-    if (type) {
-        path = [path stringByAppendingPathExtension:type];
-    }
-    if ([[NSFileManager defaultManager] isReadableFileAtPath:path]) {
-        return path;
-    }
-    else {
-        return nil;
-    }
 }
 
 @end

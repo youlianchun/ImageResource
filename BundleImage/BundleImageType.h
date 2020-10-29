@@ -26,4 +26,6 @@ static NSString * const _Nonnull BundleImageDarkMode = @"_DARKMODE";
 
 @class ImageDynamicAsset;
 typedef UIImage *_Nullable(^BundleImageProviderHandler)(NSString *_Nonnull file, BundleImageType _Nonnull type);
+typedef UIImage *_Nullable(^BundleImageProcessHandler)(UIImage *_Nonnull image, NSString *_Nonnull name, BundleImageType _Nonnull type);
+
 typedef ImageDynamicAsset *_Nonnull(^BundleImageyDnamicAssetHandler)(UIImage *_Nullable(^_Nonnull imageProviderHandler)(UIUserInterfaceStyle style)) API_AVAILABLE(ios(13.0));

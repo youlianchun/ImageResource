@@ -21,4 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable ObjectType)objectForKeyedSubscript:(KeyType)key;
 @end
 
+@interface BundleImageCache<KeyType, ObjectType>(init)
+- (nullable ObjectType)objectForKey:(KeyType<NSCopying>)key init:(nullable ObjectType(^)(void))init;
+@end
+
 NS_ASSUME_NONNULL_END

@@ -1,11 +1,11 @@
 //
-//  UIImage+WebP.m
+//  UIImage+BI_WebP.m
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/9/5.
 //
 
-#import "UIImage+WebP.h"
+#import "UIImage+BI_WebP.h"
 #import <WebP/decode.h>
 #import <WebP/encode.h>
 #import <WebP/demux.h>
@@ -17,7 +17,7 @@ static void FreeImageData(void *info, const void *data, size_t size)
     free((void *)data);
 }
 
-@implementation UIImage (WebP)
+@implementation UIImage (BI_WebP)
 
 + (UIImage *)webpImageWithContentsOfFile:(NSString *)file {
     NSData *data = [NSData dataWithContentsOfFile:file];
@@ -132,8 +132,7 @@ static void FreeImageData(void *info, const void *data, size_t size)
         if (!colorSpace) {
             colorSpace = CGColorSpaceCreateDeviceRGB();
         }
-
-        
+ 
         NSTimeInterval duration = 0.0f;
         NSMutableArray *images = [NSMutableArray array];
         WebPIterator iter = {0};

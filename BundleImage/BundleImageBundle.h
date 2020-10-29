@@ -21,9 +21,4 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)cleanAsset;
 @end
 
-
-@interface BundleImageBundle (Dir)
-+ (NSString *_Nullable)imagePathForDir:(NSString *)dir name:(NSString *)name type:(NSString *)type;
-@end
-
 NS_ASSUME_NONNULL_END

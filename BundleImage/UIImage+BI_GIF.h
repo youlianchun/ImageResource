@@ -1,5 +1,5 @@
 //
-//  UIImage+GIF.h
+//  UIImage+BI_GIF.h
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/8/30.
@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface UIImage (GIF)
+@interface UIImage (BI_GIF)
 + (UIImage *)gifImageWithContentsOfFile:(NSString *)file;
 @end
 

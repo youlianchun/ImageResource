@@ -7,7 +7,7 @@
 //
 
 #import "UIImage+Resource.h"
-#import <BundleImage/BundleImageProvider.h>
+#import <BundleImage/BundleImage.h>
 #import "TryRelay.h"
 #import <objc/runtime.h>
 
@@ -29,39 +29,49 @@ typedef UIImage YYImage;
 #if __has_include(<YYImage/YYImage.h>)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        [BundleImageProvider setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
+        [BundleImage setImageProvider:^UIImage * _Nullable(NSString * _Nonnull file, BundleImageType  _Nonnull type) {
             return [YYImage imageWithContentsOfFile:file];
         } inBundle:self.resourceBundle];
         
         if (@available(iOS 13.0, *)) {
-            [BundleImageProvider setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
+            [BundleImage setDynamicAssetHandler:^ImageDynamicAsset * _Nonnull(UIImage * _Nullable (^ _Nonnull imageProviderHandler)(UIUserInterfaceStyle)) {
                 return [YYAnimatedImageDynamicAsset assetWithImageProvider:imageProviderHandler];
             } inBundle:self.resourceBundle];
         }
     });
 #endif
 #endif
+    
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [BundleImage setImageProcess:^UIImage * _Nullable(UIImage * _Nonnull image, NSString * _Nonnull name, BundleImageType  _Nonnull type) {
+            if ([name isEqualToString:@"pop_ic_cancel_mute"]) {
+                image = [image resizableImageWithCapInsets:UIEdgeInsetsMake(10, 10, 10, 10)];
+            }
+            return image;
+        } inBundle:self.resourceBundle];
+    });
 }
 
 
 + (UIImage *)pngImageNamed:(NSString *)name {
     [self prepareIfNeed];
-    return [BundleImageProvider imageNamed:name type:BundleImageTypePNG inBundle:self.resourceBundle];
+    return [BundleImage imageNamed:name type:BundleImageTypePNG inBundle:self.resourceBundle];
 }
 + (UIImage *)webpImageNamed:(NSString *)name {
     [self prepareIfNeed];
-    return [BundleImageProvider imageNamed:name type:BundleImageTypeWEBP inBundle:self.resourceBundle];
+    return [BundleImage imageNamed:name type:BundleImageTypeWEBP inBundle:self.resourceBundle];
 }
 + (UIImage *)jpgImageNamed:(NSString *)name {
     [self prepareIfNeed];
-    return [BundleImageProvider imageNamed:name type:BundleImageTypeJPG inBundle:self.resourceBundle];
+    return [BundleImage imageNamed:name type:BundleImageTypeJPG inBundle:self.resourceBundle];
 }
 + (UIImage *)gifImageNamed:(NSString *)name {
     [self prepareIfNeed];
-    return [BundleImageProvider imageNamed:name type:BundleImageTypeGIF inBundle:self.resourceBundle];
+    return [BundleImage imageNamed:name type:BundleImageTypeGIF inBundle:self.resourceBundle];
 }
 + (NSArray *)webpImageNames {
-    return [BundleImageProvider imageNamesWithType:BundleImageTypeWEBP inBundle:self.resourceBundle];
+    return [BundleImage imageNamesWithType:BundleImageTypeWEBP inBundle:self.resourceBundle];
 
 }
 

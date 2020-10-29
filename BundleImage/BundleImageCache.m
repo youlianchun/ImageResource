@@ -128,11 +128,11 @@
 
 - (id)objectForKey:(id<NSCopying>)key {
     if (!key) return nil;
-    id value = nil;
+    id object = nil;
     pthread_mutex_lock(&_mutex_t);
-    value = [self _objectForKey:key];
+    object = [self _objectForKey:key];
     pthread_mutex_unlock(&_mutex_t);
-    return value;
+    return object;
 }
 
 - (void)clean {
@@ -146,5 +146,23 @@
 }
 - (id)objectForKeyedSubscript:(id)key {
     return [self objectForKey:key];
+}
+@end
+
+@implementation BundleImageCache(init)
+
+- (id)objectForKey:(id<NSCopying>)key init:(id(^)(void))init {
+    if (!key) return nil;
+    id object = nil;
+    pthread_mutex_lock(&_mutex_t);
+    object = [self _objectForKey:key];
+    if (!object && init) {
+        object = init();
+        if (object) {
+            [self _setObject:object forKey:key];
+        }
+    }
+    pthread_mutex_unlock(&_mutex_t);
+    return object;
 }
 @end

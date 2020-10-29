@@ -7,7 +7,7 @@
 
 #import "AppDelegate.h"
 #if DEBUG
-#import <BundleImage/BundleImageProvider.h>
+#import <BundleImage/BundleImage.h>
 #endif
 
 @interface AppDelegate ()
@@ -20,7 +20,7 @@
     // Override point for customization after application launch.
 
 #if DEBUG
-    [BundleImageProvider debugProvider];
+    [BundleImage debugProvider];
 #endif
     
     return YES;

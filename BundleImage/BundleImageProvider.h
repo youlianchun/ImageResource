@@ -1,63 +1,35 @@
 //
-//  XMImageProvider.h
+//  BundleImageProvider.h
 //  BundleImage
 //
-//  Created by YLCHUN on 2020/8/31.
+//  Created by YLCHUN on 2020/10/29.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 #import "BundleImageType.h"
 
 NS_ASSUME_NONNULL_BEGIN
-@class BundleImageProviderBundle, BundleImageCache<KeyType, ObjectType>;
+
+@class UIImage;
+@class BundleImageCache<KeyType, ObjectType>;
+@class BundleImageBundle;
 
 @interface BundleImageProvider : NSObject
 {
-    @protected
-    NSMutableDictionary<NSString*, BundleImageProviderBundle *> *_bundleDict;
-    BundleImageCache<NSString*, UIImage *> *_cache;
-    pthread_mutex_t _mutex_t;
+    __weak BundleImageCache<NSString*, UIImage *> *_cache;
+    BundleImageType _type;
+    NSString *_key;
+    NSString *_path;
+    NSString *_name;
+    UIImage *_image;
 }
 
-/// 设置Image构造block
-/// @param imageProvider image构建block，file 为资源完整地址，type 为文件名上的 type
-/// @param bundle image所在bundle
-+ (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle;
+@property (nonatomic, strong, readonly) UIImage *image;
+@property (nonatomic, copy, nullable) BundleImageProviderHandler provider;
+@property (nonatomic, copy, nullable) BundleImageProcessHandler process;
 
-/// 设置 ImageDynamicAsset，自定义动态图适配
-/// @param dynamicAssetHandler 动态 image处理
-/// @param bundle image所在bundle
-+ (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0));
++ (instancetype _Nullable)indexWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache;
 
-/// 获取图片完整地址
-/// @param name image name、path/name
-/// @param type 类型
-/// @param dark 是否是dark mode
-/// @param bundle image所在bundle
-+ (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *_Nullable)bundle;
-
-/// 读取图片
-/// @param name image name、path/name
-/// @param type 类型
-/// @param bundle image所在bundle
-+ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *_Nullable)bundle;
-
-+ (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *_Nullable)bundle;
-
-@end
-
-@interface BundleImageProvider (debug)
-+ (void)debugProvider;
-@end
-
-/// 通过资源目录直接读取，不走缓存
-@interface BundleImageProvider (Dir)
-
-/// 读取图片
-/// @param name image name
-/// @param type 类型(资源扩展名为 XMBundleImageType 小写)
-/// @param dir 资源目录
-+ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inDir:(NSString *)dir;
 @end
 
 NS_ASSUME_NONNULL_END

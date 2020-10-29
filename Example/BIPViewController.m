@@ -8,7 +8,7 @@
 #import "BIPViewController.h"
 #import "UIImage+Dynamic.h"
 #import "UIImage+Resource.h"
-#import <BundleImage/BundleImageProvider.h>
+#import <BundleImage/BundleImage.h>
 
 @interface BIPViewController ()<UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, strong) UITableView *tableView;
@@ -20,23 +20,40 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    [self gif];
+//    return;
     self.datas = [UIImage webpImageNames];
     [self.view addSubview:self.tableView];
     [self pathImage];
+    [self process];
 
     // Do any additional setup after loading the view.
 }
+- (void)gif {
+    UIImage *image = [BundleImage imageNamed:@"animation_gif" type:BundleImageTypeWEBP inBundle:nil];
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+    imageView.center = CGPointMake(50, 200);
+    [self.view addSubview:imageView];
+    
+    self.view.backgroundColor = [UIColor colorWithWhite:0 alpha:0.2];
 
+}
 - (void)pathImage {
-    UIImage *image0 = [BundleImageProvider imageNamed:@"find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
-    UIImage *image1 = [BundleImageProvider imageNamed:@"Resource/WebP/duplication/find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
+    UIImage *image0 = [BundleImage imageNamed:@"find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
+    UIImage *image1 = [BundleImage imageNamed:@"Resource/WebP/duplication/find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
     UIImageView *imageView0 = [[UIImageView alloc] initWithImage:image0];
     UIImageView *imageView1 = [[UIImageView alloc] initWithImage:image1];
     imageView0.center = CGPointMake(50, 200);
     imageView1.center = CGPointMake(100, 200);
     [self.view addSubview:imageView0];
     [self.view addSubview:imageView1];
+}
+
+- (void)process {
+    UIImage *image = [UIImage webpImageNamed:@"pop_ic_cancel_mute"];
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(50, 250, 100, 100)];
+    imageView.image = image;
+    [self.view addSubview:imageView];
 }
 
 - (UITableView *)tableView {

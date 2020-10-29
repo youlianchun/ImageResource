@@ -1,5 +1,5 @@
 //
-//  UIImage+WebP.h
+//  UIImage+BI_WebP.h
 //  BundleImage
 //
 //  Created by YLCHUN on 2020/9/5.
@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface UIImage (WebP)
+@interface UIImage (BI_WebP)
 + (UIImage *)webpImageWithContentsOfFile:(NSString *)file;
 @end
 

@@ -70,6 +70,8 @@ static BundleImageProvider *kImageProvider = nil;
 - (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *)bundle {
     BundleImageProviderBundle *imageBundle = [self imageBundle:bundle];
     if (@available(iOS 13.0, *)) {
+        
+        
         __weak typeof(self) wself = self;
         ImageDynamicAsset *ida = nil;
         UIImage *_Nullable(^imageProviderHandler)(UIUserInterfaceStyle style) = ^UIImage *_Nullable(UIUserInterfaceStyle style){
@@ -88,8 +90,12 @@ static BundleImageProvider *kImageProvider = nil;
     }
 }
 
+- (NSString *)cacheKeyWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageProviderBundle *)bundle {
+    return [NSString stringWithFormat:@"%@_%@_%@_%@", bundle.bundleKey, name, type, dark?@"dark":@"light"];
+}
+
 - (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type dark:(BOOL) dark inBundle:(BundleImageProviderBundle *)bundle {
-    NSString *key =  [NSString stringWithFormat:@"%@_%@", bundle.bundleKey, name];
+    NSString *key = [self cacheKeyWithImageName:name type:type dark:dark inBundle:bundle];
     UIImage *image = _cache[key];
     if (!image) {
         NSString *path = [bundle imagePathForName:name type:type dark:dark];

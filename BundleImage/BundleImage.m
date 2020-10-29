@@ -80,7 +80,7 @@ static BundleImage *_kBundleImageShareInstance = nil;
 - (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
     
-   BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:NO];
+    BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:NO];
     
     @autoreleasepool {
         BundleImageProvider *lightIndex = [BundleImageProvider indexWithImageName:name type:type dark:NO inBundle:imageBundle cache:_imageCache];
@@ -130,6 +130,11 @@ static BundleImage *_kBundleImageShareInstance = nil;
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
     return [imageBundle imageNamesWithType:type];
+}
+
+- (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {
+    BundleImageBundle *imageBundle = [self imageBundle:bundle];
+    return [imageBundle imagePathForName:name type:imageBundle dark:dark];
 }
 
 + (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {

@@ -7,15 +7,18 @@
 
 #import "BundleImageBundle.h"
 #import <UIKit/UIScreen.h>
+#import "BundleImageCache.h"
 #import <CommonCrypto/CommonDigest.h>
 
 @implementation BundleImageBundle
 {
     NSString *_resourceDir;
-    NSDictionary *_assetDict;
     NSString *_bundleKey;
     NSString *_relativePath;
+    NSString *_bundleDir;
+    BundleImageCache<NSString *, NSDictionary *> *_infoCache;
 }
+
 @synthesize bundleKey = _bundleKey;
 
 - (instancetype)initWithBundle:(NSBundle *_Nullable)bundle {
@@ -23,10 +26,11 @@
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
+    _infoCache = [[BundleImageCache alloc] initWithCapacity:10];
     _resourceDir = bundle.resourcePath;
     _relativePath = relativeBundlePath(_resourceDir);
     _bundleKey = md5Str(_relativePath);
-    [self assetDict];
+    [self analysisBundleIfNeed];
     return self;
 }
 
@@ -34,16 +38,20 @@
     return [self initWithBundle:nil];
 }
 
-- (NSDictionary *)assetDict {
-    if (!_assetDict) {
-        _assetDict = [self loadAssetBundle];
+- (NSString *)bundleDir {
+    if (!_bundleDir && _bundleKey) {
+        NSString *rootDir = [self.class bundleAssetDir];
+        _bundleDir = [rootDir stringByAppendingPathComponent:_bundleKey];
+        createDirectoryIfNeed(_bundleDir);
     }
-    return _assetDict;
+    return _bundleDir;
 }
 
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type {
     if (type.length == 0) return nil;
-    return [[[self assetDict][type] allKeys] copy];
+    NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
+    NSString *infoPath = [[typeDir stringByAppendingPathComponent:@"Contents"] stringByAppendingPathExtension:@"plist"];
+    return [NSArray arrayWithContentsOfFile:infoPath];
 }
 
 - (NSArray *)extenCheckArr {
@@ -62,21 +70,7 @@
 - (NSString *)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark {
     
     if (name.length == 0 || type.length == 0) return nil;
-    type = type.uppercaseString;
-    int mainScale = (int)UIScreen.mainScreen.scale;
-    NSString *path = [self imagePathForName:name type:type scale:mainScale dark:dark];
-    if (!path) {
-        for (int scale = 3; scale > 0; scale --) {
-            if (scale == mainScale) continue;
-            path = [self imagePathForName:name type:type scale:scale dark:dark];
-            if (path.length > 0) break;
-        }
-    }
     
-    return path;
-}
-
-- (NSString *)imagePathForName:(NSString *)name type:(BundleImageType)type scale:(int)scale dark:(BOOL)dark {
     NSString *shotName = nil;
     NSString *namePath = nil;
     if ([name containsString:@"/"]) {
@@ -90,7 +84,23 @@
         shotName = name;
     }
     
-    NSArray<NSString *> *arr = [self assetDict][type][shotName][styleKey(dark)][[NSString stringWithFormat:@"%@", @(scale)]];
+    NSDictionary *info = [self infoForName:shotName type:type];
+    NSDictionary *styleInfo = info[styleKey(dark)];
+    int mainScale = (int)UIScreen.mainScreen.scale;
+    NSString *path = [self imagePathForNamePath:namePath scale:mainScale styleInfo:styleInfo];
+    if (!path) {
+        for (int scale = 3; scale > 0; scale --) {
+            if (scale == mainScale) continue;
+            path = [self imagePathForNamePath:namePath scale:scale styleInfo:styleInfo];
+            if (path.length > 0) break;
+        }
+    }
+    return path;
+}
+
+- (NSString *)imagePathForNamePath:(NSString *)namePath scale:(int)scale styleInfo:(NSDictionary *)styleInfo {
+    
+    NSArray<NSString *> *arr = styleInfo[[NSString stringWithFormat:@"%@", @(scale)]];
     NSString *relativePath = nil;
     if (namePath) {
         for (NSString *path in arr) {
@@ -114,43 +124,60 @@
     }
 }
 
+- (NSDictionary *)infoForName:(NSString *)name type:(BundleImageType)type {
+    NSString *key = [NSString stringWithFormat:@"%@.%@", name, type];
+    return [_infoCache objectForKey:key init:^NSDictionary * _Nonnull{
+        NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
+        NSString *infoPath = [[typeDir stringByAppendingPathComponent:name] stringByAppendingPathExtension:@"plist"];
+        return [NSDictionary dictionaryWithContentsOfFile:infoPath];
+    }];
+}
 
-- (NSDictionary *)loadAssetBundle {
-    if (!_bundleKey) {
-        return nil;
+
+- (void)analysisBundleIfNeed {
+    if (!self.bundleDir) {
+        return;
     }
-    NSString *dir = [self.class bundleAssetDir];
+    NSString *infoPath = [[self.bundleDir stringByAppendingPathComponent:@"info"] stringByAppendingPathExtension:@"plist"];
+    NSDictionary *assetInfo = [NSDictionary dictionaryWithContentsOfFile:infoPath];
     
-    BOOL isDir = NO;
-    BOOL isExists = [[NSFileManager defaultManager] fileExistsAtPath:dir isDirectory:&isDir];
-    if (!isExists || !isDir) {
-        [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
-    }
-    
-    NSString *assetPath = [[dir stringByAppendingPathComponent:_bundleKey] stringByAppendingPathExtension:@"plist"];
-    
-    static NSString *kContent = @"content";
     static NSString *kVersion = @"version";
-    static NSString *kOwnerPath = @"ownerpath";
+    static NSString *kOwner = @"owner";
     NSString *version = [NSBundle mainBundle].infoDictionary[@"CFBundleShortVersionString"];
     
-    NSDictionary *asset = [NSDictionary dictionaryWithContentsOfFile:assetPath];
-    if (![asset[kVersion] isEqual:version]) {
-        NSMutableDictionary *newAsset = [NSMutableDictionary dictionary];
-        newAsset[kOwnerPath] = _relativePath;
-        newAsset[kContent] = [self loadAsset:_resourceDir];
-        newAsset[kVersion] = version;
-        asset = [newAsset copy];
-        BOOL b = [asset writeToFile:assetPath atomically:YES];
+    if (![assetInfo[kVersion] isEqual:version]) {
+        cleanDirectoryIfNeed(self.bundleDir);
+        createDirectoryIfNeed(self.bundleDir);
+        NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary *> *> *dict = [self analysisContentsFromAsset:_resourceDir];
+        [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
+            NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
+            createDirectoryIfNeed(typeDir);
+            
+            NSMutableArray *nameArr = [NSMutableArray array];
+            [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
+                [nameArr addObject:key];
+                NSString *infoPath = [[typeDir stringByAppendingPathComponent:key] stringByAppendingPathExtension:@"plist"];
+
+                BOOL b = [obj writeToFile:infoPath atomically:YES];
+                if (!b) {
+                    
+                }
+            }];
+            NSString *infoPath = [[typeDir stringByAppendingPathComponent:@"Contents"] stringByAppendingPathExtension:@"plist"];
+            [nameArr writeToFile:infoPath atomically:YES];
+        }];
+        
+        NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
+        assetInfo[kOwner] = _relativePath;
+        assetInfo[kVersion] = version;
+        BOOL b = [assetInfo writeToFile:infoPath atomically:YES];
         if (!b) {
             NSLog(@"");
         }
     }
-    
-    return asset[kContent];
 }
 
-- (NSDictionary *)loadAsset:(NSString *)dir {
+- (NSDictionary *)analysisContentsFromAsset:(NSString *)assetDir {
     NSMutableDictionary *(^dictBlock)(NSMutableDictionary *dict, NSString *key) = ^NSMutableDictionary *(NSMutableDictionary *dict, NSString *key){
         if (!key) return nil;
         NSMutableDictionary *newDict = dict[key];
@@ -171,13 +198,14 @@
     };
     NSMutableDictionary *assetDict = [NSMutableDictionary dictionary];
 
-    traverseFile(dir, ^(NSString *content, NSString *path) {
+    traverseFile(assetDir, ^(NSString *content, NSString *path) {
         [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
             NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
             NSMutableDictionary *fileDict = dictBlock(extenDict, name);
+            
             NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
 
-            NSString *relativePath = [path substringFromIndex:dir.length];
+            NSString *relativePath = [path substringFromIndex:assetDir.length];
             NSMutableArray *scaleArr = arrBlock(styleDict, scale);
             [scaleArr addObject:relativePath];
         }];
@@ -229,6 +257,38 @@
     [[NSFileManager defaultManager] removeItemAtPath:dir error:nil];
 }
 
+static BOOL cleanDirectoryIfNeed(NSString *path) {
+    if (path.length == 0) return NO;
+    BOOL isDir = NO;
+    BOOL isExists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
+    if (isExists && isDir) {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
+        if (error != nil) {
+            __block BOOL hasErr = NO;
+            traversePath(path, ^(NSString *content, BOOL isDir, NSString *path) {
+                NSError *error = nil;
+                [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
+                if (error != nil) {
+                    hasErr = YES;
+                }
+            });
+            return hasErr;
+        }
+    }
+    return NO;
+}
+
+static BOOL createDirectoryIfNeed(NSString *path) {
+    if (path.length == 0) return NO;
+    BOOL isDir = NO;
+    BOOL isExists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
+    NSError *error = nil;
+    if (!isExists || !isDir) {
+        [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:&error];
+    }
+    return error == nil;
+}
 static NSString *styleKey(BOOL isDark) {
     return isDark?@"dark":@"light";
 }

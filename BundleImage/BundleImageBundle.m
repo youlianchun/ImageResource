@@ -16,7 +16,7 @@
     NSString *_bundleKey;
     NSString *_relativePath;
     NSString *_bundleDir;
-    BundleImageCache<NSString *, NSDictionary *> *_infoCache;
+    BundleImageCache<NSString *, NSDictionary *> *_assetCache;
 }
 
 @synthesize bundleKey = _bundleKey;
@@ -26,7 +26,7 @@
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
-    _infoCache = [[BundleImageCache alloc] initWithCapacity:10];
+    _assetCache = [[BundleImageCache alloc] initWithCapacity:10];
     _resourceDir = bundle.resourcePath;
     _relativePath = relativeBundlePath(_resourceDir);
     _bundleKey = md5Str(_relativePath);
@@ -126,7 +126,7 @@
 
 - (NSDictionary *)infoForName:(NSString *)name type:(BundleImageType)type {
     NSString *key = [NSString stringWithFormat:@"%@.%@", name, type];
-    return [_infoCache objectForKey:key init:^NSDictionary * _Nonnull{
+    return [_assetCache objectForKey:key init:^NSDictionary * _Nonnull{
         NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
         NSString *infoPath = [typeDir stringByAppendingPathComponent:name];
         return [NSDictionary dictionaryWithContentsOfFile:infoPath];

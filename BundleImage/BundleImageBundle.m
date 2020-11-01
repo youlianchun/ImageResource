@@ -50,8 +50,8 @@
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type {
     if (type.length == 0) return nil;
     NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
-    NSString *infoPath = [[typeDir stringByAppendingPathComponent:@"Contents"] stringByAppendingPathExtension:@"plist"];
-    return [NSArray arrayWithContentsOfFile:infoPath];
+    NSArray<NSString *> *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:typeDir error:nil];
+    return contents;
 }
 
 - (NSArray *)extenCheckArr {
@@ -128,7 +128,7 @@
     NSString *key = [NSString stringWithFormat:@"%@.%@", name, type];
     return [_infoCache objectForKey:key init:^NSDictionary * _Nonnull{
         NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
-        NSString *infoPath = [[typeDir stringByAppendingPathComponent:name] stringByAppendingPathExtension:@"plist"];
+        NSString *infoPath = [typeDir stringByAppendingPathComponent:name];
         return [NSDictionary dictionaryWithContentsOfFile:infoPath];
     }];
 }
@@ -153,18 +153,14 @@
             NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
             createDirectoryIfNeed(typeDir);
             
-            NSMutableArray *nameArr = [NSMutableArray array];
             [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
-                [nameArr addObject:key];
-                NSString *infoPath = [[typeDir stringByAppendingPathComponent:key] stringByAppendingPathExtension:@"plist"];
+                NSString *infoPath = [typeDir stringByAppendingPathComponent:key];
 
                 BOOL b = [obj writeToFile:infoPath atomically:YES];
                 if (!b) {
                     
                 }
             }];
-            NSString *infoPath = [[typeDir stringByAppendingPathComponent:@"Contents"] stringByAppendingPathExtension:@"plist"];
-            [nameArr writeToFile:infoPath atomically:YES];
         }];
         
         NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];

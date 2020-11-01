@@ -100,8 +100,7 @@
 }
 
 - (NSString *)imagePathForNamePath:(NSString *)namePath scale:(int)scale styleInfo:(NSDictionary *)styleInfo {
-    
-    NSArray<NSString *> *arr = styleInfo[[NSString stringWithFormat:@"%@", @(scale)]];
+    NSArray<NSString *> *arr = styleInfo[[NSString stringWithFormat:@"%d", scale]];
     NSString *relativePath = nil;
     if (namePath) {
         for (NSString *path in arr) {
@@ -184,52 +183,53 @@
 }
 
 - (NSDictionary *)analysisContentsFromAsset:(NSString *)assetDir {
-    __block pthread_mutex_t mutex_t = PTHREAD_MUTEX_INITIALIZER;
     NSMutableDictionary *(^dictBlock)(NSMutableDictionary *dict, NSString *key) = ^NSMutableDictionary *(NSMutableDictionary *dict, NSString *key){
         if (!key) return nil;
-        pthread_mutex_lock(&mutex_t);
         NSMutableDictionary *newDict = dict[key];
         if (!newDict) {
             newDict = [NSMutableDictionary dictionary];
             dict[key] = newDict;
         }
-        pthread_mutex_unlock(&mutex_t);
         return newDict;
     };
     NSMutableArray *(^arrBlock)(NSMutableDictionary *dict, NSString *key) = ^NSMutableArray *(NSMutableDictionary *dict, NSString *key){
         if (!key) return nil;
-        pthread_mutex_lock(&mutex_t);
-        NSMutableArray *new = dict[key];
-        if (!new) {
-            new = [NSMutableArray array];
-            dict[key] = new;
+        NSMutableArray *newArr = dict[key];
+        if (!newArr) {
+            newArr = [NSMutableArray array];
+            dict[key] = newArr;
         }
-        pthread_mutex_unlock(&mutex_t);
-        return new;
+        return newArr;
     };
-    NSMutableDictionary *assetDict = [NSMutableDictionary dictionary];
+    
     NSTimeInterval t0 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+    
+    NSMutableDictionary *assetDict = [NSMutableDictionary dictionary];
     NSOperationQueue *queue = [NSOperationQueue new];
     queue.maxConcurrentOperationCount = 5;
-    traverseFile(assetDir, ^(NSString *content, NSString *path) {
-        [queue addOperationWithBlock:^{
-            [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
-                NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
-                NSMutableDictionary *fileDict = dictBlock(extenDict, name);
+    __block pthread_mutex_t mutex_t;
+    pthread_mutex_init(&mutex_t, NULL);
+    traverseFileInQueue(assetDir, ^(NSString *content, NSString *path) {
+        [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
+            
+            pthread_mutex_lock(&mutex_t);
+            NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
+            NSMutableDictionary *fileDict = dictBlock(extenDict, name);
 
-                NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
+            NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
+            NSMutableArray *scaleArr = arrBlock(styleDict, scale);
+            pthread_mutex_unlock(&mutex_t);
 
-                NSString *relativePath = [path substringFromIndex:assetDir.length];
-                NSMutableArray *scaleArr = arrBlock(styleDict, scale);
-                [scaleArr addObject:relativePath];
-            }];
+            NSString *relativePath = [path substringFromIndex:assetDir.length];
+            [scaleArr addObject:relativePath];
         }];
-    }, ^BOOL(NSString *dir) {
-        return YES;
-    });
+    }, queue);
     [queue waitUntilAllOperationsAreFinished];
+    
     NSTimeInterval t1 = [NSProcessInfo processInfo].systemUptime / 1000.0;
     NSLog(@"time %@", @(t1 - t0));
+    
+    pthread_mutex_destroy(&mutex_t);
     return [assetDict copy];
 }
 
@@ -362,6 +362,18 @@ static void traverseFile(NSString *path, void(^callback)(NSString *content, NSSt
     });
 }
 
+static void traverseFileInQueue(NSString *path, void(^callback)(NSString *content, NSString *path), NSOperationQueue *queue) {
+    [queue addOperationWithBlock:^{
+        traversePath(path, ^(NSString *content, BOOL isDir, NSString *path) {
+            if (isDir) {
+                traverseFileInQueue(path, callback, queue);
+            }else {
+                callback(content, path);
+            }
+        });
+    }];
+}
+
 static NSString *relativeBundlePath(NSString *path) {
     NSString *mainPath = NSBundle.mainBundle.bundlePath;
     if ([path isEqualToString:mainPath]) {
@@ -402,18 +414,6 @@ static int scaleFromNameNoExtension(NSString *name) {
         }
     }
     return scale;
-}
-
-static NSArray<NSString *> *matcheRegex(NSString *string, NSString *regex) {
-    NSError *error = NULL;
-    NSRegularExpression *regularExpression = [NSRegularExpression regularExpressionWithPattern:regex options:NSRegularExpressionCaseInsensitive error:&error];
-    NSArray *matches = [regularExpression matchesInString:string options:kNilOptions range:NSMakeRange(0, string.length)];
-    NSMutableArray *arr = [NSMutableArray array];
-    for (NSTextCheckingResult *matche in matches) {
-        NSString *str = [string substringWithRange:matche.range];
-        [arr addObject:str];
-    }
-    return [arr copy];
 }
 
 static NSString *md5Str(NSString *string) {

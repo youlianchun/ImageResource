@@ -9,6 +9,7 @@
 #import <UIKit/UIScreen.h>
 #import "BundleImageCache.h"
 #import <CommonCrypto/CommonDigest.h>
+#import <pthread/pthread.h>
 
 @implementation BundleImageBundle
 {
@@ -149,7 +150,12 @@
         if (![assetInfo[kVersion] isEqual:version]) {
             cleanDirectoryIfNeed(self.bundleDir);
             createDirectoryIfNeed(self.bundleDir);
+            NSTimeInterval t0 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+
             NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary *> *> *dict = [self analysisContentsFromAsset:_resourceDir];
+            
+            NSTimeInterval t1 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+
             [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
                 NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
                 createDirectoryIfNeed(typeDir);
@@ -163,7 +169,9 @@
                     }
                 }];
             }];
-            
+            NSTimeInterval t2 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+
+            NSLog(@"time %@, %@", @(t1 - t0), @(t2 - t1));
             NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
             assetInfo[kOwner] = _relativePath;
             assetInfo[kVersion] = version;
@@ -176,41 +184,52 @@
 }
 
 - (NSDictionary *)analysisContentsFromAsset:(NSString *)assetDir {
+    __block pthread_mutex_t mutex_t = PTHREAD_MUTEX_INITIALIZER;
     NSMutableDictionary *(^dictBlock)(NSMutableDictionary *dict, NSString *key) = ^NSMutableDictionary *(NSMutableDictionary *dict, NSString *key){
         if (!key) return nil;
+        pthread_mutex_lock(&mutex_t);
         NSMutableDictionary *newDict = dict[key];
         if (!newDict) {
             newDict = [NSMutableDictionary dictionary];
             dict[key] = newDict;
         }
+        pthread_mutex_unlock(&mutex_t);
         return newDict;
     };
     NSMutableArray *(^arrBlock)(NSMutableDictionary *dict, NSString *key) = ^NSMutableArray *(NSMutableDictionary *dict, NSString *key){
         if (!key) return nil;
+        pthread_mutex_lock(&mutex_t);
         NSMutableArray *new = dict[key];
         if (!new) {
             new = [NSMutableArray array];
             dict[key] = new;
         }
+        pthread_mutex_unlock(&mutex_t);
         return new;
     };
     NSMutableDictionary *assetDict = [NSMutableDictionary dictionary];
-
+    NSTimeInterval t0 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+    NSOperationQueue *queue = [NSOperationQueue new];
+    queue.maxConcurrentOperationCount = 5;
     traverseFile(assetDir, ^(NSString *content, NSString *path) {
-        [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
-            NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
-            NSMutableDictionary *fileDict = dictBlock(extenDict, name);
-            
-            NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
+        [queue addOperationWithBlock:^{
+            [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
+                NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
+                NSMutableDictionary *fileDict = dictBlock(extenDict, name);
 
-            NSString *relativePath = [path substringFromIndex:assetDir.length];
-            NSMutableArray *scaleArr = arrBlock(styleDict, scale);
-            [scaleArr addObject:relativePath];
+                NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
+
+                NSString *relativePath = [path substringFromIndex:assetDir.length];
+                NSMutableArray *scaleArr = arrBlock(styleDict, scale);
+                [scaleArr addObject:relativePath];
+            }];
         }];
     }, ^BOOL(NSString *dir) {
         return YES;
     });
-    
+    [queue waitUntilAllOperationsAreFinished];
+    NSTimeInterval t1 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+    NSLog(@"time %@", @(t1 - t0));
     return [assetDict copy];
 }
 
@@ -220,18 +239,17 @@
     if (exten.length == 0) return;
 
     if (![[self extenCheckArr] containsObject:exten]) return;
-    
-    NSString *scale = matcheRegex(fullName, @"(?<=@)(\\d.\\d)|(\\d)(?=x\\..*)").firstObject;
-    NSString *nameRegex = nil;
+
+    NSString *scale = _NSStringNameScale(fullName);
+    NSUInteger len = exten.length + 1;
     if (scale.length == 0) {
         scale = @"1";
-        nameRegex = @"^.*(?=\\..*)";
     }
     else {
-        nameRegex = @"^.*(?=(@((\\d)|(\\d.\\d))x)\\..*)";
+        len += scale.length;
     }
-    
-    NSString *name = matcheRegex(fullName, nameRegex).firstObject;
+    NSString *name = [fullName substringToIndex:fullName.length-len];
+
     NSString *darkSuffix = [self darkSuffix];
     BOOL isDark = [name.uppercaseString hasSuffix:darkSuffix];
     if (isDark) {
@@ -287,37 +305,41 @@ static BOOL createDirectoryIfNeed(NSString *path) {
     }
     return error == nil;
 }
+
 static NSString *styleKey(BOOL isDark) {
     return isDark?@"dark":@"light";
 }
 
 static void traversePath(NSString *path, void(^callback)(NSString *content, BOOL isDir, NSString *path)) {
-    NSError *err;
-    NSArray <NSString *> *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:path error:&err];
-    NSMutableArray<void(^)(void)> *fileArr = [NSMutableArray array];
-    NSMutableArray<void(^)(void)> *dirArr = [NSMutableArray array];
+    @autoreleasepool {
+        NSError *err;
+        NSArray <NSString *> *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:path error:&err];
+        
+        NSMutableArray<void(^)(void)> *fileArr = [NSMutableArray array];
+        NSMutableArray<void(^)(void)> *dirArr = [NSMutableArray array];
 
-    for (NSString *content in contents) {
-        NSString *p = [path stringByAppendingPathComponent:content];
-        BOOL isDir = NO;
-        BOOL isExist = [[NSFileManager defaultManager] fileExistsAtPath:p isDirectory:&isDir];
-        if (isExist) {
-            if (isDir) {
-                [dirArr addObject:^void{
-                    callback(content, isDir, p);
-                }];
-            }else {
-                [fileArr addObject:^void{
-                    callback(content, isDir, p);
-                }];
+        for (NSString *content in contents) {
+            NSString *p = [path stringByAppendingPathComponent:content];
+            BOOL isDir = NO;
+            BOOL isExist = [[NSFileManager defaultManager] fileExistsAtPath:p isDirectory:&isDir];
+            if (isExist) {
+                if (isDir) {
+                    [dirArr addObject:^void{
+                        callback(content, isDir, p);
+                    }];
+                }else {
+                    [fileArr addObject:^void{
+                        callback(content, isDir, p);
+                    }];
+                }
             }
         }
-    }
-    for (void(^callback)(void) in fileArr) {
-        callback();
-    }
-    for (void(^callback)(void) in dirArr) {
-        callback();
+        for (void(^callback)(void) in fileArr) {
+            callback();
+        }
+        for (void(^callback)(void) in dirArr) {
+            callback();
+        }
     }
 }
 
@@ -377,4 +399,18 @@ static NSString *md5Str(NSString *string) {
     return output;
 }
 
+static NSString *_NSStringNameScale(NSString *string) {
+    if (string.length == 0) return @"";
+    NSString *name = string.stringByDeletingPathExtension;
+    __block NSString *scale = @"";
+    
+    NSRegularExpression *pattern = [NSRegularExpression regularExpressionWithPattern:@"@[0-9]+\\.?[0-9]*x$" options:NSRegularExpressionAnchorsMatchLines error:nil];
+    [pattern enumerateMatchesInString:name options:kNilOptions range:NSMakeRange(0, name.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
+        if (result.range.location >= 3) {
+            scale = [string substringWithRange:NSMakeRange(result.range.location + 1, result.range.length - 2)];
+        }
+    }];
+    
+    return scale;
+}
 @end

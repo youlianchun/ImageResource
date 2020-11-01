@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 @interface BundleImage (debug)
-+ (void)debug;
++ (void)debugMode;
 @end
 
 NS_ASSUME_NONNULL_END

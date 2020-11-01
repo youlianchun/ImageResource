@@ -138,37 +138,39 @@
     if (!self.bundleDir) {
         return;
     }
-    NSString *infoPath = [[self.bundleDir stringByAppendingPathComponent:@"info"] stringByAppendingPathExtension:@"plist"];
-    NSDictionary *assetInfo = [NSDictionary dictionaryWithContentsOfFile:infoPath];
-    
-    static NSString *kVersion = @"version";
-    static NSString *kOwner = @"owner";
-    NSString *version = [NSBundle mainBundle].infoDictionary[@"CFBundleShortVersionString"];
-    
-    if (![assetInfo[kVersion] isEqual:version]) {
-        cleanDirectoryIfNeed(self.bundleDir);
-        createDirectoryIfNeed(self.bundleDir);
-        NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary *> *> *dict = [self analysisContentsFromAsset:_resourceDir];
-        [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
-            NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
-            createDirectoryIfNeed(typeDir);
-            
-            [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
-                NSString *infoPath = [typeDir stringByAppendingPathComponent:key];
-
-                BOOL b = [obj writeToFile:infoPath atomically:YES];
-                if (!b) {
-                    
-                }
-            }];
-        }];
+    @autoreleasepool {
+        NSString *infoPath = [[self.bundleDir stringByAppendingPathComponent:@"info"] stringByAppendingPathExtension:@"plist"];
+        NSDictionary *assetInfo = [NSDictionary dictionaryWithContentsOfFile:infoPath];
         
-        NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
-        assetInfo[kOwner] = _relativePath;
-        assetInfo[kVersion] = version;
-        BOOL b = [assetInfo writeToFile:infoPath atomically:YES];
-        if (!b) {
-            NSLog(@"");
+        static NSString *kVersion = @"version";
+        static NSString *kOwner = @"owner";
+        NSString *version = [NSBundle mainBundle].infoDictionary[@"CFBundleShortVersionString"];
+        
+        if (![assetInfo[kVersion] isEqual:version]) {
+            cleanDirectoryIfNeed(self.bundleDir);
+            createDirectoryIfNeed(self.bundleDir);
+            NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary *> *> *dict = [self analysisContentsFromAsset:_resourceDir];
+            [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
+                NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
+                createDirectoryIfNeed(typeDir);
+                
+                [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
+                    NSString *infoPath = [typeDir stringByAppendingPathComponent:key];
+
+                    BOOL b = [obj writeToFile:infoPath atomically:YES];
+                    if (!b) {
+                        
+                    }
+                }];
+            }];
+            
+            NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
+            assetInfo[kOwner] = _relativePath;
+            assetInfo[kVersion] = version;
+            BOOL b = [assetInfo writeToFile:infoPath atomically:YES];
+            if (!b) {
+                NSLog(@"");
+            }
         }
     }
 }

@@ -22,7 +22,7 @@
     NSBundle *bundle = [NSBundle bundleWithPath:path];
     NSLog(@"");
 #if DEBUG
-    [BundleImage debug];
+    [BundleImage debugMode];
 #endif
     
     return YES;

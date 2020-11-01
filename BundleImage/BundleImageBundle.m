@@ -239,16 +239,24 @@
     if (exten.length == 0) return;
 
     if (![[self extenCheckArr] containsObject:exten]) return;
-
-    NSString *scale = _NSStringNameScale(fullName);
-    NSUInteger len = exten.length + 1;
-    if (scale.length == 0) {
+    
+    NSString *nameWithoutExtension = fullName.stringByDeletingPathExtension;
+    int s = scaleFromNameNoExtension(nameWithoutExtension);
+    
+    NSString *name = nil;
+    NSString *scale = nil;
+    if (s < 0) {
+        name = nameWithoutExtension;
         scale = @"1";
     }
-    else {
-        len += scale.length;
+    else if (s == 0) {
+        scale = @"1";
+        name = [nameWithoutExtension substringToIndex:nameWithoutExtension.length - 3];
     }
-    NSString *name = [fullName substringToIndex:fullName.length-len];
+    else {
+        scale = [NSString stringWithFormat:@"%d", s];
+        name = [nameWithoutExtension substringToIndex:nameWithoutExtension.length - 3];
+    }
 
     NSString *darkSuffix = [self darkSuffix];
     BOOL isDark = [name.uppercaseString hasSuffix:darkSuffix];
@@ -375,6 +383,26 @@ static NSString *relativeBundlePath(NSString *path) {
     return relativePath;
 }
 
+static int scaleFromNameNoExtension(NSString *name) {
+    //不带扩展名
+    //name@2x
+    //name
+    int scale = -1;
+    if (name.length > 1) {
+        char c = [name characterAtIndex:name.length - 1];
+        if (c == 'x' || c == 'X') {
+            if (name.length > 3) {
+                if ([name characterAtIndex:name.length - 3] == '@') {
+                    int s = [name characterAtIndex:name.length - 2] - '0';
+                    if (s < 9) {
+                        scale = s;
+                    }
+                }
+            }
+        }
+    }
+    return scale;
+}
 
 static NSArray<NSString *> *matcheRegex(NSString *string, NSString *regex) {
     NSError *error = NULL;
@@ -399,18 +427,4 @@ static NSString *md5Str(NSString *string) {
     return output;
 }
 
-static NSString *_NSStringNameScale(NSString *string) {
-    if (string.length == 0) return @"";
-    NSString *name = string.stringByDeletingPathExtension;
-    __block NSString *scale = @"";
-    
-    NSRegularExpression *pattern = [NSRegularExpression regularExpressionWithPattern:@"@[0-9]+\\.?[0-9]*x$" options:NSRegularExpressionAnchorsMatchLines error:nil];
-    [pattern enumerateMatchesInString:name options:kNilOptions range:NSMakeRange(0, name.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
-        if (result.range.location >= 3) {
-            scale = [string substringWithRange:NSMakeRange(result.range.location + 1, result.range.length - 2)];
-        }
-    }];
-    
-    return scale;
-}
 @end

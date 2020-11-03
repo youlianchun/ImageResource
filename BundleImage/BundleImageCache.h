@@ -25,4 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable ObjectType)objectForKey:(KeyType<NSCopying>)key init:(nullable ObjectType(^)(void))init;
 @end
 
+
+@interface BundleImageCache(patrol)
+- (void)patrolAfter:(NSTimeInterval)time;
+- (void)cancelPatrol;
+@end
+
+@interface BundleImageCache(lock)
+- (void)lockBlock:(void(^)(void))block;
+@end
 NS_ASSUME_NONNULL_END

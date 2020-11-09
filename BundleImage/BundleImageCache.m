@@ -90,15 +90,15 @@
 }
 
 - (void)_setObject:(id)object forKey:(id<NSCopying>)key {
-    BOOL protect = _dict[key].protect;
+    BOOL protect = _dict[key].protect && [object isEqual:_dict[key].value];
     [self removeNodeForKey:key];
     if (object) {
         _BICacheNode *node = [_BICacheNode nodeWithValue:object key:key];
         node.time = time(NULL);
+        node.protect = protect;
         _dict[key] = node;
         _headNode.prev = node;
         node.next = _headNode;
-        node.protect = protect;
         if (!_headNode) {
             _tailNode = node;
         }
@@ -218,8 +218,13 @@
     if (pt <= 0) return;
     pthread_mutex_lock(&_mutex_t);
     time_t t = time(NULL);
-    while (_tailNode && t - _tailNode.time > pt) {
-        [self removeNodeForKey:_tailNode.key];
+    _BICacheNode *node = _tailNode;
+    while (node) {
+        if (node.protect || t - node.time < pt) {
+            node = node.prev;
+            continue;
+        }
+        [self removeNodeForKey:node.key];
     }
     pthread_mutex_unlock(&_mutex_t);
 }

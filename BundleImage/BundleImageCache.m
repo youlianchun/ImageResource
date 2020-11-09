@@ -15,6 +15,7 @@
 @property (nonatomic, strong) _BICacheNode<KeyType, ObjectType> *next;
 @property (nonatomic, weak) _BICacheNode<KeyType, ObjectType> *prev;
 @property (nonatomic, assign) time_t time;
+@property (nonatomic, assign) BOOL protect;
 @end
 
 @implementation _BICacheNode
@@ -25,12 +26,6 @@
     node->_key = key;
     return node;
 }
-- (void)setNext:(_BICacheNode *)next {
-    _next = next;
-    if (_next == self) {
-        NSLog(@"");
-    }
-}
 
 @end
 
@@ -38,11 +33,10 @@
 @implementation BundleImageCache
 {
     pthread_mutex_t _mutex_t;
-    NSMutableDictionary *_dict;
+    NSMutableDictionary<id<NSCopying>, _BICacheNode *> *_dict;
     _BICacheNode *_headNode;
     __weak _BICacheNode *_tailNode;
 }
-
 
 - (instancetype)initWithCapacity:(NSUInteger)capacity {
     self = [super init];
@@ -50,7 +44,6 @@
         pthread_mutex_init(&_mutex_t, NULL);
         _dict = [NSMutableDictionary dictionary];
         _capacity = capacity;
-        
         [[NSNotificationCenter defaultCenter] removeObserver:self];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didReceiveMemoryWarningNotification) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
@@ -64,7 +57,6 @@
 - (void)dealloc {
     pthread_mutex_destroy(&_mutex_t);
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [NSObject cancelPreviousPerformRequestsWithTarget:self];
 }
 
 - (void)_didReceiveMemoryWarningNotification {
@@ -95,13 +87,10 @@
         _tailNode = prev;
         _tailNode.next = nil;
     }
-    if (_headNode == node || _tailNode == node) {
-        NSLog(@"");
-    }
-    [self check];
 }
 
 - (void)_setObject:(id)object forKey:(id<NSCopying>)key {
+    BOOL protect = _dict[key].protect;
     [self removeNodeForKey:key];
     if (object) {
         _BICacheNode *node = [_BICacheNode nodeWithValue:object key:key];
@@ -109,19 +98,28 @@
         _dict[key] = node;
         _headNode.prev = node;
         node.next = _headNode;
+        node.protect = protect;
         if (!_headNode) {
             _tailNode = node;
         }
         _headNode = node;
-        
-        if (_capacity > 0 && _dict.count > _capacity) {
-            if (!_tailNode) {
-                NSLog(@"");
+        if (_capacity > 0) {
+            NSInteger redundant = _dict.count - _capacity;
+            _BICacheNode *node = _tailNode;
+            for (NSInteger i = 0; i < redundant && node; i++) {
+                if (node.protect) {
+                    node = node.prev;
+                    continue;
+                }
+                else {
+                    if (node != _headNode) {
+                        [self removeNodeForKey:node.key];
+                    }
+                    break;
+                }
             }
-            [self removeNodeForKey:_tailNode.key];
         }
     }
-    [self check];
 }
 
 - (id)_objectForKey:(id<NSCopying>)key {
@@ -143,7 +141,6 @@
         }
         node.time = time(NULL);
     }
-    [self check];
     return node.value;
 }
 
@@ -182,21 +179,18 @@
     return [self objectForKey:key];
 }
 
-- (void)check {
-    if (_headNode && !_tailNode) {
-        NSLog(@"");
-        _BICacheNode *node = _headNode;
-        NSUInteger i = 1;
-        while (node.next) {
-            i ++;
-            if (node.prev == nil && node != _headNode) {
-                NSLog(@"");
-            }
-            node = node.next;
-        }
-        
-        NSLog(@"");
-    }
+- (void)protect:(id)key {
+    if (!key) return;
+    pthread_mutex_lock(&_mutex_t);
+    _dict[key].protect = YES;
+    pthread_mutex_unlock(&_mutex_t);
+}
+
+- (void)unprotect:(id)key {
+    if (!key) return;
+    pthread_mutex_lock(&_mutex_t);
+    _dict[key].protect = NO;
+    pthread_mutex_unlock(&_mutex_t);
 }
 @end
 
@@ -220,35 +214,14 @@
 
 @implementation BundleImageCache(patrol)
 
-- (void)patrol:(time_t)pt {
+- (void)patrolTime:(NSTimeInterval)pt {
+    if (pt <= 0) return;
+    pthread_mutex_lock(&_mutex_t);
     time_t t = time(NULL);
     while (_tailNode && t - _tailNode.time > pt) {
         [self removeNodeForKey:_tailNode.key];
     }
-    [self check];
-}
-
-- (void)_patrolAfter:(NSNumber *)timeObj {
-    NSTimeInterval time = timeObj.doubleValue;
-    pthread_mutex_lock(&_mutex_t);
-    [self patrol:time];
     pthread_mutex_unlock(&_mutex_t);
-    if (time > 0) {
-        [self patrolAfter:time];
-    }
-}
-
-- (void)patrolAfter:(NSTimeInterval)time {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [NSObject cancelPreviousPerformRequestsWithTarget:self];
-        [self performSelector:@selector(_patrolAfter:) withObject:@(time) afterDelay:time];
-    });
-}
-
-- (void)cancelPatrol {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [NSObject cancelPreviousPerformRequestsWithTarget:self];
-    });
 }
 
 @end

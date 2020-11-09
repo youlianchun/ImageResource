@@ -19,16 +19,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)clean;
 - (void)setObject:(nullable ObjectType)obj forKeyedSubscript:(KeyType <NSCopying>)key;
 - (nullable ObjectType)objectForKeyedSubscript:(KeyType)key;
+
+- (void)protect:(KeyType)key;
+- (void)unprotect:(KeyType)key;
 @end
 
 @interface BundleImageCache<KeyType, ObjectType>(init)
 - (nullable ObjectType)objectForKey:(KeyType<NSCopying>)key init:(nullable ObjectType(^)(void))init;
 @end
 
-
 @interface BundleImageCache(patrol)
-- (void)patrolAfter:(NSTimeInterval)time;
-- (void)cancelPatrol;
+- (void)patrolTime:(NSTimeInterval)time;
 @end
 
 @interface BundleImageCache(lock)

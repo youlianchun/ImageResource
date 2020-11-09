@@ -15,7 +15,7 @@
 
 @implementation BundleImage
 
-static NSUInteger const kBIBundleCacheCapacity = 5;
+static NSUInteger const kBIBundleCacheCapacity = 50;
 static NSUInteger const kBIImageCacheCapacity = 50;
 
 static BundleImage *_kBundleImageShareInstance = nil;
@@ -74,9 +74,20 @@ static BundleImage *_kBundleImageShareInstance = nil;
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
-    BundleImageBundle *imageBundle = [_bundleCache objectForKey:bundle.resourcePath init:^BundleImageBundle * _Nonnull{
-        return [[BundleImageBundle alloc] initWithBundle:bundle];
+    NSString *key = bundle.resourcePath;
+    __block BOOL isNew = NO;
+    __weak typeof(_bundleCache) bundleCache = _bundleCache;
+    BundleImageBundle *imageBundle = [_bundleCache objectForKey:key init:^BundleImageBundle * _Nonnull{
+        BundleImageBundle *imageBundle = [[BundleImageBundle alloc] initWithBundle:bundle];
+        [imageBundle setDidAnalysisCallback:^{
+            [bundleCache unprotect:key];
+        }];
+        isNew = YES;
+        return imageBundle;
     }];
+    if (isNew && !imageBundle.didAnalysis) {
+        [_bundleCache protect:key];
+    }
     return imageBundle;
 }
 

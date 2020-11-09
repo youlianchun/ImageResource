@@ -18,6 +18,8 @@
     NSString *_relativePath;
     NSString *_bundleDir;
     BundleImageCache<NSString *, NSDictionary *> *_assetCache;
+    NSDictionary *_tmpCache;
+    void(^_didAnalysisCallback)(void);
 }
 
 @synthesize bundleKey = _bundleKey;
@@ -39,6 +41,12 @@
     return [self initWithBundle:nil];
 }
 
+- (void)setDidAnalysisCallback:(void(^)(void))didAnalysisCallback {
+    [_assetCache lockBlock:^{
+        self->_didAnalysisCallback = didAnalysisCallback;
+    }];
+}
+
 - (NSString *)bundleDir {
     if (!_bundleDir && _bundleKey) {
         NSString *rootDir = [self.class bundleAssetDir];
@@ -48,11 +56,26 @@
     return _bundleDir;
 }
 
+- (BOOL)didAnalysis {
+    __block BOOL didAnalysis = YES;
+    [_assetCache lockBlock:^{
+        didAnalysis = self->_tmpCache == nil;
+    }];
+    return didAnalysis;
+}
+
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type {
     if (type.length == 0) return nil;
-    NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
-    NSArray<NSString *> *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:typeDir error:nil];
-    return contents;
+    NSDictionary<NSString *, NSDictionary*> *tmpCache = _tmpCache;
+    NSArray *names = nil;
+    if (tmpCache) {
+        names = tmpCache[type].allKeys;
+    }
+    else {
+        NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
+        names = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:typeDir error:nil];
+    }
+    return names;
 }
 
 - (NSArray *)extenCheckArr {
@@ -127,9 +150,17 @@
 - (NSDictionary *)infoForName:(NSString *)name type:(BundleImageType)type {
     NSString *key = [NSString stringWithFormat:@"%@.%@", name, type];
     return [_assetCache objectForKey:key init:^NSDictionary * _Nonnull{
-        NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
-        NSString *infoPath = [typeDir stringByAppendingPathComponent:name];
-        return [NSDictionary dictionaryWithContentsOfFile:infoPath];
+        NSDictionary *info = nil;
+        NSDictionary *tmpCache = self->_tmpCache;
+        if (tmpCache) {
+            info = tmpCache[type][name];
+        }
+        else {
+            NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:type];
+            NSString *infoPath = [typeDir stringByAppendingPathComponent:name];
+            info = [NSDictionary dictionaryWithContentsOfFile:infoPath];
+        }
+        return info;
     }];
 }
 
@@ -152,32 +183,48 @@
             NSTimeInterval t0 = [NSProcessInfo processInfo].systemUptime / 1000.0;
 
             NSDictionary<NSString *, NSDictionary<NSString *, NSDictionary *> *> *dict = [self analysisContentsFromAsset:_resourceDir];
+            _tmpCache = dict;
             
             NSTimeInterval t1 = [NSProcessInfo processInfo].systemUptime / 1000.0;
-
-            [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
-                NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
-                createDirectoryIfNeed(typeDir);
-                
-                [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
-                    NSString *infoPath = [typeDir stringByAppendingPathComponent:key];
-
-                    BOOL b = [obj writeToFile:infoPath atomically:YES];
-                    if (!b) {
+            dispatch_async(dispatch_get_global_queue(0, 0), ^{
+                NSOperationQueue *queue = [NSOperationQueue new];
+                queue.maxConcurrentOperationCount = 5;
+                [dict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary<NSString *,NSDictionary *> * _Nonnull obj, BOOL * _Nonnull stop) {
+                    NSString *typeDir = [self.bundleDir stringByAppendingPathComponent:key];
+                    createDirectoryIfNeed(typeDir);
+                    
+                    [obj enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, NSDictionary * _Nonnull obj, BOOL * _Nonnull stop) {
+                        NSString *infoPath = [typeDir stringByAppendingPathComponent:key];
+                        [queue addOperationWithBlock:^{
+                            BOOL b = [obj writeToFile:infoPath atomically:YES];
+                            if (!b) {
+                                
+                            }
+                        }];
                         
-                    }
+                    }];
                 }];
-            }];
-            NSTimeInterval t2 = [NSProcessInfo processInfo].systemUptime / 1000.0;
+                [queue waitUntilAllOperationsAreFinished];
+                NSTimeInterval t2 = [NSProcessInfo processInfo].systemUptime / 1000.0;
 
-            NSLog(@"time %@, %@", @(t1 - t0), @(t2 - t1));
-            NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
-            assetInfo[kOwner] = _relativePath;
-            assetInfo[kVersion] = version;
-            BOOL b = [assetInfo writeToFile:infoPath atomically:YES];
-            if (!b) {
-                NSLog(@"");
-            }
+                NSLog(@"time %@, %@", @(t1 - t0), @(t2 - t1));
+                NSMutableDictionary *assetInfo = [NSMutableDictionary dictionary];
+                assetInfo[kOwner] = self->_relativePath;
+                assetInfo[kVersion] = version;
+                BOOL b = [assetInfo writeToFile:infoPath atomically:YES];
+                if (!b) {
+                    NSLog(@"");
+                }
+                __block void(^didAnalysisCallback)(void);
+                [self->_assetCache lockBlock:^{
+                    self->_tmpCache = nil;
+                    didAnalysisCallback = self->_didAnalysisCallback;
+                    self->_didAnalysisCallback = nil;
+                }];
+                if (didAnalysisCallback) {
+                    didAnalysisCallback();
+                }
+            });
         }
     }
 }
@@ -211,16 +258,17 @@
     pthread_mutex_init(&mutex_t, NULL);
     traverseFileInQueue(assetDir, ^(NSString *content, NSString *path) {
         [self decodeName:content callback:^(NSString *name, NSString *exten, NSString *scale, BOOL isDark) {
+            NSString *style = styleKey(isDark);
+            NSString *relativePath = [path substringFromIndex:assetDir.length];
             
             pthread_mutex_lock(&mutex_t);
             NSMutableDictionary *extenDict = dictBlock(assetDict, exten);
             NSMutableDictionary *fileDict = dictBlock(extenDict, name);
 
-            NSMutableDictionary *styleDict = dictBlock(fileDict, styleKey(isDark));
+            NSMutableDictionary *styleDict = dictBlock(fileDict, style);
             NSMutableArray *scaleArr = arrBlock(styleDict, scale);
             pthread_mutex_unlock(&mutex_t);
 
-            NSString *relativePath = [path substringFromIndex:assetDir.length];
             [scaleArr addObject:relativePath];
         }];
     }, queue);

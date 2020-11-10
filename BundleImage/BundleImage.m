@@ -18,19 +18,12 @@
 static NSUInteger const kBIBundleCacheCapacity = 50;
 static NSUInteger const kBIImageCacheCapacity = 50;
 
-static BundleImage *_kBundleImageShareInstance = nil;
-+ (instancetype)allocWithZone:(struct _NSZone *)zone {
++ (instancetype)shareInstance {
+    static BundleImage *_kBundleImageShareInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _kBundleImageShareInstance = [super allocWithZone:zone];
+        _kBundleImageShareInstance = [[self alloc] init];
     });
-    return _kBundleImageShareInstance;
-}
-
-+ (instancetype)shareInstance {
-    if (!_kBundleImageShareInstance) {
-        _kBundleImageShareInstance = [self new];
-    }
     return _kBundleImageShareInstance;
 }
 
@@ -60,6 +53,8 @@ static BundleImage *_kBundleImageShareInstance = nil;
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
+    NSString *key = bundle.resourcePath;
+    if (!key) return nil;
     pthread_mutex_lock(&_mutex_t);
     BundleImageHandler *handler = _handlerCache[bundle.resourcePath];
     if (!handler && init) {
@@ -75,6 +70,7 @@ static BundleImage *_kBundleImageShareInstance = nil;
         bundle = [NSBundle mainBundle];
     }
     NSString *key = bundle.resourcePath;
+    if (!key) return nil;
     __block BOOL isNew = NO;
     __weak typeof(_bundleCache) bundleCache = _bundleCache;
     BundleImageBundle *imageBundle = [_bundleCache objectForKey:key init:^BundleImageBundle * _Nonnull{

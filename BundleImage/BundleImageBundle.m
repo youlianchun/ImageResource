@@ -66,7 +66,10 @@
 
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type {
     if (type.length == 0) return nil;
-    NSDictionary<NSString *, NSDictionary*> *tmpCache = _tmpCache;
+    __block NSDictionary<NSString *, NSDictionary*> *tmpCache = nil;
+    [_assetCache lockBlock:^{
+        tmpCache = self->_tmpCache;
+    }];
     NSArray *names = nil;
     if (tmpCache) {
         names = tmpCache[type].allKeys;

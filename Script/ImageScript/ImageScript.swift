@@ -1,10 +1,10 @@
-#!/usr/bin/env swift
+//#!/usr/bin/env swift
 
 //查找注视位置： DarkModeSuffix ，与lib保持一致
 import Cocoa
 import CoreImage
 
-scriptMian()
+//scriptMian()
 
 //https://developers.google.com/speed/webp/docs/cwebp
 //var count = CommandLine.argc
@@ -170,14 +170,16 @@ func imagesetAdjust(path:String) -> Void {
 
 func image2WebP(inDir:String, outDir:String? = nil, lossless:Bool, quality:String) -> Void {
     print("转换开始: \(inDir)")
+    var total:(file:Int32, webp:Int32) = (0, 0)
+    var increaseArr = [(in:String, out:String, dif:String)]()
     var failureArr = [String]()
-    var errorArr = [String]()
     try? Traverse().traverseFile(path: inDir, callback: { (content, filePath) in
         let exten = (content as NSString).pathExtension
         let extenCheckArr = ["PNG", "JPG", "GIF"];
         if !extenCheckArr.contains(exten.uppercased()) {
             return
         }
+        total.file += 1
         var newName = (content as NSString).deletingPathExtension
         newName = "\(newName).webp"
         var dir = outDir ?? (filePath as NSString).deletingLastPathComponent
@@ -189,14 +191,16 @@ func image2WebP(inDir:String, outDir:String? = nil, lossless:Bool, quality:Strin
         var ofile = "\(dir)/\(newName)"
         
         let success = imageCompressToWebP(inFile: filePath, outFile: ofile, lossless: lossless, quality: quality)
+        
         if success != nil {
-            if !success! {
-                failureArr.append(ofile)
+            total.webp += 1
+            if !success!.reduced {
+                increaseArr.append((filePath, ofile, success!.difference))
             }
         }
         else {
             ofile = "\(dir)/\(content)"
-            errorArr.append(filePath)
+            failureArr.append(filePath)
             if filePath != ofile {
                 do {
                     try FileManager.default.copyItem(atPath: filePath, toPath: ofile)
@@ -208,16 +212,16 @@ func image2WebP(inDir:String, outDir:String? = nil, lossless:Bool, quality:Strin
     }, condition: { (dirPath) -> Bool in
         return dirPath.hasSuffix(".imageset") == false
     })
-    print("转换结束.")
-    if failureArr.count > 0 {
+    print("转换结束.\t文件总数：\(total.file) 转换文件总数：\(total.webp)")
+    if increaseArr.count > 0 {
         print("产出增大:")
-        for log in failureArr {
-            print("\t\(log)")
+        for log in increaseArr {
+            print("\t\(log.in)\n\t\t\(log.out)\n\t\t\(log.dif)")
         }
     }
-    if errorArr.count > 0 {
+    if failureArr.count > 0 {
         print("转换失败:")
-        for log in errorArr {
+        for log in failureArr {
             print("\t\(log)")
         }
     }
@@ -225,8 +229,9 @@ func image2WebP(inDir:String, outDir:String? = nil, lossless:Bool, quality:Strin
 
 func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:String) -> Void {
     print("转换开始: \(path)")
+    var increaseArr = [(in:String, out:String, dif:String)]()
     var failureArr = [String]()
-    var errorArr = [String]()
+    var total:(image:Int32, file:Int32, webp:Int32) = (0, 0, 0)
     try? Traverse().traverseFile(path: path, callback: { (content, filePath) in
         if content == "Contents.json" {
             let dir = (filePath as NSString).deletingLastPathComponent
@@ -234,7 +239,7 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
             if !dirName.hasSuffix(".imageset") {
                return
             }
-            
+            total.image += 1
             let url = URL(fileURLWithPath: filePath)
             guard let data = try? Data(contentsOf: url) else { return }
             guard let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else { return }
@@ -242,9 +247,11 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
             let fileName = dirName.prefix(dirName.count - 9)
             
             let images = dict["images"] as! [[String: Any]]
+            var hasDarkMode = false
             
             for image in images {
                 if let name = image["filename"] as? String {
+                    total.file += 1
                     let scale = image["scale"] as! String
                     var suffix = ".webp"
                     if scale != "1x" {
@@ -255,6 +262,7 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
                             if appearance["appearance"] as! String == "luminosity" {
                                 let model = appearance["value"] as! String
                                 suffix = "_\(model)mode\(suffix)"   //DarkModeSuffix，与lib保持一致，此处采用小写
+                                hasDarkMode = true
                             }
                         }
                     }
@@ -272,13 +280,14 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
                     
                     let success = imageCompressToWebP(inFile: ifile, outFile: ofile, lossless: lossless, quality: quality)
                     if success != nil {
-                        if !success! {
-                            failureArr.append(ofile)
+                        total.webp += 1
+                        if !success!.reduced {
+                            increaseArr.append((ifile, ofile, success!.difference))
                         }
                     }
                     else {
                         ofile = "\(imagesetDir)/\(name)"
-                        errorArr.append(ifile)
+                        failureArr.append(ifile)
                         if ifile != ofile {
                             do {
                                 try FileManager.default.copyItem(atPath: ifile, toPath: ofile)
@@ -289,20 +298,23 @@ func imageset2WebP(path:String, outDir:String? = nil, lossless:Bool, quality:Str
                     }
                 }
             }
+            if hasDarkMode {
+                total.image += 1
+            }
         } else {
             
         }
     })
-    print("转换结束.")
-    if failureArr.count > 0 {
+    print("转换结束.\t图片总数：\(total.image) 文件总数：\(total.file) 转换文件总数：\(total.webp)")
+    if increaseArr.count > 0 {
         print("产出增大:")
-        for log in failureArr {
-            print("\t\(log)")
+        for log in increaseArr {
+            print("\t\(log.in)\n\t\t\(log.out)\n\t\t\(log.dif)")
         }
     }
-    if errorArr.count > 0 {
+    if failureArr.count > 0 {
         print("转换失败:")
-        for log in errorArr {
+        for log in failureArr {
             print("\t\(log)")
         }
     }
@@ -340,11 +352,13 @@ func cloneDir(dir:String, fromDir:String, toDir:String)->String? {
 
 func cleanOtherScaleImage(dir:String, scale:Int32) {
     print("清理开始: \(dir)")
+    var total:(image:Int32, file:Int32, save:Int32) = (0, 0, 0)
     let assetDict = loadAsset(dir: dir)
     var logArr = [String]()
     for (_, typeDict) in assetDict {
         for (_, nameDict) in typeDict as! [String: Any] {
             for (_, styleDict) in nameDict as! [String: Any] {
+                total.image += 1
                 let dict = styleDict as! [String: String]
                 var scaleKey = ""
                 if let _ = dict["\(scale)"] {
@@ -363,6 +377,7 @@ func cleanOtherScaleImage(dir:String, scale:Int32) {
                 }
                 
                 for (scale, path) in styleDict as! [String: String] {
+                    total.file += 1
                     if scale != scaleKey {
                         do {
                             let url = URL(fileURLWithPath: path)
@@ -372,11 +387,14 @@ func cleanOtherScaleImage(dir:String, scale:Int32) {
                             logArr.append(path)
                         }
                     }
+                    else {
+                        total.save += 1
+                    }
                 }
             }
         }
     }
-    print("清理结束")
+    print("清理结束.\t图片总数：\(total.image) 文件总数：\(total.file) 保留文件总数：\(total.save)")
     if logArr.count > 0 {
         print("清理失败:")
         for log in logArr {
@@ -426,7 +444,7 @@ func decodeName(fullName:String, callback:((_ name:String, _ exten:String, _ sca
         return
     }
     var nameRegex:String!
-    var scale = matcheRegex(string: fullName, regex: "(?<=@)(\\d.\\d)|(\\d)(?=x\\..*)").first ?? "1"
+    var scale = matcheRegex(string: fullName, regex: "(?<=@)(\\d.\\d)|(\\d)(?=x\\..*)").first ?? ""
     if scale.count == 0 {
         scale = "1"
         nameRegex = "^.*(?=\\..*)"
@@ -458,25 +476,23 @@ func matcheRegex(string:String, regex:String)->[String] {
     return arr
 }
 
-func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:String, checkSize:UInt64? = nil)->Bool? {
+func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:String, checkSize:UInt64? = nil)->(reduced:Bool, difference:String)? {
     //https://developers.google.com/speed/webp/docs/cwebp
     //cwebp 可执行文件路径
     let exten = (inFile as NSString).pathExtension.uppercased()
     let isGIF = exten == "GIF"
     
+    #if DEBUG
+    var executePath = isGIF ? "/Volumes/Macintosh_HD/ImageResource/Script/bin/gif2webp" : "/Volumes/Macintosh_HD/ImageResource/Script/bin/cwebp"
+    #else
     var executePath = isGIF ? "./bin/gif2webp" : "./bin/cwebp"
+    #endif
+    
     let sPath = scriptPath()
     if !executePath.hasPrefix("/") {
         executePath = (sPath as NSString).appendingPathComponent(executePath)
         executePath = executePath.replacingOccurrences(of: "/./", with: "/")
     }
-    
-//    if isGIF {
-//        executePath = "/Volumes/Macintosh_HD/works/XMBundleImage/Example/Script/ImageScript/bin/gif2webp"
-//    }
-//    else {
-//        executePath = "/Volumes/Macintosh_HD/works/XMBundleImage/Example/Script/ImageScript/bin/cwebp"
-//    }
     
     let inSize = fileSize(path:inFile)
     var ret = 0;
@@ -488,9 +504,10 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
         }
         if ret == 0 {
             let outSize = fileSize(path:outFile)
-            print(successLog(inSize: checkSize ?? inSize, outSize: outSize, outFile: outFile))
+            let dif = difference(inSize: checkSize ?? inSize, outSize: outSize)
+            print(successLog(difference: dif, outFile: outFile))
             let b = outSize <= checkSize ?? inSize
-            return b
+            return (b, dif)
         }
     }
     else {
@@ -527,12 +544,14 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
                         try? FileManager.default.removeItem(atPath: oFile)
                     }
                     let b = size <= checkSize ?? inSize
-                    print(successLog(inSize: checkSize ?? inSize, outSize: size, outFile: outFile))
-                    return b
+                    let dif = difference(inSize: checkSize ?? inSize, outSize: size)
+                    print(successLog(difference: dif, outFile: outFile))
+                    return (b, dif)
                 }
             }else {
-                print(successLog(inSize: checkSize ?? inSize, outSize: outSize, outFile: outFile))
-                return true
+                let dif = difference(inSize: checkSize ?? inSize, outSize: outSize)
+                print(successLog(difference: dif, outFile: outFile))
+                return (true, dif)
             }
         }
     }
@@ -551,7 +570,7 @@ func imageCompressToWebP(inFile:String, outFile:String, lossless:Bool, quality:S
     return nil
 }
 
-func successLog(inSize:UInt64, outSize:UInt64, outFile:String)->String {
+func difference(inSize:UInt64, outSize:UInt64)->String {
     let b = outSize <= inSize
     var offset:String
     if b {
@@ -559,11 +578,17 @@ func successLog(inSize:UInt64, outSize:UInt64, outFile:String)->String {
     }else {
         offset = "+\(formatString(Double(outSize - inSize) / 1024.0)) KB"
     }
-    return "🎉 \(outSize < inSize ? "🎉" : "⚠️ ") Saved output file (\(offset)) '\(outFile)'"
+    return offset
 }
+
+func successLog(difference:String, outFile:String)->String {
+    return "🎉 \(difference.hasPrefix("-") ? "🎉" : "⚠️ ") Saved output file (\(difference)) '\(outFile)'"
+}
+
 func formatString(_ value:Double)->String {
-    return String(format:"%.2f",value)
+    return String(format:"%.4f",value)
 }
+
 func recodeImage(inFile:String, outFile:String) -> Bool {
     if let data = try? Data(contentsOf: URL(fileURLWithPath: inFile)) as CFData {
         if let source = CGImageSourceCreateWithData(data, nil) {

@@ -19,11 +19,59 @@ static void FreeImageData(void *info, const void *data, size_t size)
 
 @implementation UIImage (BIWebP)
 
-+ (UIImage *)webpImageWithContentsOfFile:(NSString *)file {
-    NSData *data = [NSData dataWithContentsOfFile:file];
-    return [self webpImageWithData:data scale:scaleFromImageFile(file)];
++ (UIImage *)bi_webpImageWithData:(NSData *)data scale:(CGFloat)scale {
+    if (!data || data.length == 0) return NULL;
+    
+    WebPData webpData = {0};
+    webpData.bytes = data.bytes;
+    webpData.size = data.length;
+    
+    WebPDemuxer *demuxer = WebPDemux(&webpData);
+    if (!demuxer) {
+        return nil;
+    }
+    
+    int frameCount = WebPDemuxGetI(demuxer, WEBP_FF_FRAME_COUNT);
+    if (frameCount == 0) {
+        WebPDemuxDelete(demuxer);
+        return nil;
+    }
+    else if (frameCount == 1) {
+        WebPDemuxDelete(demuxer);
+        return [self _bi_webpImageWithData:data scale:scale];
+    }
+    else {
+        int canvasWidth = WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_WIDTH);
+        int canvasHeight = WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_HEIGHT);
+        CGColorSpaceRef colorSpace = WebPDemuxGetColorSpace(demuxer);
+        if (!colorSpace) {
+            colorSpace = CGColorSpaceCreateDeviceRGB();
+        }
+ 
+        NSTimeInterval duration = 0.0f;
+        NSMutableArray *images = [NSMutableArray array];
+        WebPIterator iter = {0};
+        if (WebPDemuxGetFrame(demuxer, 1, &iter)) {
+            do {
+                CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Host;
+                        bitmapInfo |= iter.has_alpha ? kCGImageAlphaPremultipliedFirst : kCGImageAlphaNoneSkipFirst;
+                CGContextRef canvas = CGBitmapContextCreate(NULL, canvasWidth, canvasHeight, 8, 0, colorSpace, bitmapInfo);
+                
+                duration += iter.duration;
+                CGImageRef cgimage = [self _bi_drawnWebpImageWithCanvas:canvas iterator:iter colorSpace:colorSpace];
+                UIImage *image = [UIImage imageWithCGImage:cgimage];
+
+                [images addObject:image];
+            } while (WebPDemuxNextFrame(&iter));
+            WebPDemuxReleaseIterator(&iter);
+        }
+        WebPDemuxDelete(demuxer);
+        return [UIImage animatedImageWithImages:images duration:duration/1000.0];
+
+    }
 }
-+ (UIImage *)_webpImageWithData:(NSData *)data scale:(CGFloat)scale {
+
++ (UIImage *)_bi_webpImageWithData:(NSData *)data scale:(CGFloat)scale {
     WebPDecoderConfig config = {0};
     if (!WebPInitDecoderConfig(&config)) {
         return nil;
@@ -66,98 +114,9 @@ static void FreeImageData(void *info, const void *data, size_t size)
     return image;
 }
 
-+ (nullable UIImage *)drawnWebpImageWithCanvas:(CGContextRef)canvas iterator:(WebPIterator)iter {
-    // 这里是调用的前面静态图绘制的方法
-    
-    NSData *data = [NSData dataWithBytes:iter.fragment.bytes length:iter.fragment.size];
-    UIImage *image = [self _webpImageWithData:data scale:1];
 
-    if (!image) {
-        return nil;
-    }
-    
-    size_t canvasWidth = CGBitmapContextGetWidth(canvas);
-    size_t canvasHeight = CGBitmapContextGetHeight(canvas);
-    CGSize size = CGSizeMake(canvasWidth, canvasHeight);
-    CGFloat tmpX = iter.x_offset;
-    CGFloat tmpY = size.height - iter.height - iter.y_offset;
-    CGRect imageRect = CGRectMake(tmpX, tmpY, iter.width, iter.height);
-    // Blend
-    BOOL shouldBlend = iter.blend_method == WEBP_MUX_BLEND;
-    
-    // 如果BlendMode开启，该帧应当混合画画布上，否则，应该覆盖，也就是清空指定范围后再重画
-    if (!shouldBlend) {
-        CGContextClearRect(canvas, imageRect);
-    }
-    CGContextDrawImage(canvas, imageRect, image.CGImage);
-    CGImageRef newImageRef = CGBitmapContextCreateImage(canvas);
-    
-    image = [UIImage imageWithCGImage:newImageRef];
-    CGImageRelease(newImageRef);
-    
-    // Dispose如果是Background，表示解码下一帧需要清空画布
-    if (iter.dispose_method == WEBP_MUX_DISPOSE_BACKGROUND) {
-        CGContextClearRect(canvas, imageRect);
-    }
-    
-    return image;
-}
-
-
-+ (UIImage *)webpImageWithData:(NSData *)data scale:(CGFloat)scale {
-    if (!data || data.length == 0) return NULL;
-    
-    WebPData webpData = {0};
-    webpData.bytes = data.bytes;
-    webpData.size = data.length;
-    
-    WebPDemuxer *demuxer = WebPDemux(&webpData);
-    if (!demuxer) {
-        return nil;
-    }
-    
-    int frameCount = WebPDemuxGetI(demuxer, WEBP_FF_FRAME_COUNT);
-    if (frameCount == 0) {
-        WebPDemuxDelete(demuxer);
-        return nil;
-    }
-    else if (frameCount == 1) {
-        WebPDemuxDelete(demuxer);
-        return [self _webpImageWithData:data scale:scale];
-    }
-    else {
-        int canvasWidth = WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_WIDTH);
-        int canvasHeight = WebPDemuxGetI(demuxer, WEBP_FF_CANVAS_HEIGHT);
-        CGColorSpaceRef colorSpace = WebPDemuxGetColorSpace(demuxer);
-        if (!colorSpace) {
-            colorSpace = CGColorSpaceCreateDeviceRGB();
-        }
- 
-        NSTimeInterval duration = 0.0f;
-        NSMutableArray *images = [NSMutableArray array];
-        WebPIterator iter = {0};
-        if (WebPDemuxGetFrame(demuxer, 1, &iter)) {
-            do {
-                CGBitmapInfo bitmapInfo = kCGBitmapByteOrder32Host;
-                        bitmapInfo |= iter.has_alpha ? kCGImageAlphaPremultipliedFirst : kCGImageAlphaNoneSkipFirst;
-                CGContextRef canvas = CGBitmapContextCreate(NULL, canvasWidth, canvasHeight, 8, 0, colorSpace, bitmapInfo);
-                
-                duration += iter.duration;
-                CGImageRef cgimage = [self drawnWebpImageWithCanvas:canvas iterator:iter colorSpace:colorSpace];
-                UIImage *image = [UIImage imageWithCGImage:cgimage];
-
-                [images addObject:image];
-            } while (WebPDemuxNextFrame(&iter));
-            WebPDemuxReleaseIterator(&iter);
-        }
-        WebPDemuxDelete(demuxer);
-        return [UIImage animatedImageWithImages:images duration:duration/1000.0];
-
-    }
-}
-
-+(nullable CGImageRef)drawnWebpImageWithCanvas:(CGContextRef)canvas iterator:(WebPIterator)iter colorSpace:(nonnull CGColorSpaceRef)colorSpaceRef CF_RETURNS_RETAINED {
-   CGImageRef imageRef = [self webpImageRefWithData:iter.fragment colorSpace:colorSpaceRef];
++(nullable CGImageRef)_bi_drawnWebpImageWithCanvas:(CGContextRef)canvas iterator:(WebPIterator)iter colorSpace:(nonnull CGColorSpaceRef)colorSpaceRef CF_RETURNS_RETAINED {
+   CGImageRef imageRef = [self _bi_webpImageRefWithData:iter.fragment colorSpace:colorSpaceRef];
    if (!imageRef) {
        return nil;
    }
@@ -184,7 +143,7 @@ static void FreeImageData(void *info, const void *data, size_t size)
    return newImageRef;
 }
 
-+ (nullable CGImageRef)webpImageRefWithData:(WebPData)webpData colorSpace:(nonnull CGColorSpaceRef)colorSpaceRef CF_RETURNS_RETAINED {
++ (nullable CGImageRef)_bi_webpImageRefWithData:(WebPData)webpData colorSpace:(nonnull CGColorSpaceRef)colorSpaceRef CF_RETURNS_RETAINED {
     WebPDecoderConfig config;
     if (!WebPInitDecoderConfig(&config)) {
         return nil;
@@ -242,6 +201,7 @@ static CGColorSpaceRef WebPDemuxGetColorSpace(WebPDemuxer *demuxer) CF_RETURNS_R
             // See #2618, the `CGColorSpaceCreateWithICCProfile` does not copy ICC Profile data, it only retain `CFDataRef`.
             // When the libwebp `WebPDemuxer` dealloc, all chunks will be freed. So we must copy the ICC data (really cheap, less than 10KB)
             NSData *profileData = [NSData dataWithBytes:chunk_iter.chunk.bytes length:chunk_iter.chunk.size];
+//            colorSpaceRef = CGColorSpaceCreateWithICCData((__bridge CFTypeRef _Nullable)(profileData));
             colorSpaceRef = CGColorSpaceCreateWithICCProfile((__bridge CFDataRef)profileData);
             WebPDemuxReleaseChunkIterator(&chunk_iter);
             if (colorSpaceRef) {
@@ -256,17 +216,8 @@ static CGColorSpaceRef WebPDemuxGetColorSpace(WebPDemuxer *demuxer) CF_RETURNS_R
     }
     return colorSpaceRef;
 }
-static CGFloat scaleFromImageFile(NSString *string) {
-    NSString *regex = @"(?<=@)(\\d.\\d)|(\\d)(?=x\\..*)";
-    NSError *error = NULL;
-    NSRegularExpression *regularExpression = [NSRegularExpression regularExpressionWithPattern:regex options:NSRegularExpressionCaseInsensitive error:&error];
-     NSArray<NSTextCheckingResult *> *matches = [regularExpression matchesInString:string options:NSRegularExpressionCaseInsensitive | NSRegularExpressionDotMatchesLineSeparators range:NSMakeRange(0, string.length)];
-    NSString *str = [string substringWithRange:matches.lastObject.range];
-    if (str.length == 0) {
-        str = @"1";
-    }
-    return str.intValue;
-}
+
+
 @end
 
 

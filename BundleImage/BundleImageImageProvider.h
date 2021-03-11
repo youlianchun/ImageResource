@@ -14,21 +14,14 @@ NS_ASSUME_NONNULL_BEGIN
 @class BundleImageCache<KeyType, ObjectType>;
 @class BundleImageBundle;
 
-@interface BundleImageProvider : NSObject
-{
-    __weak BundleImageCache<NSString*, UIImage *> *_cache;
-    BundleImageType _type;
-    NSString *_key;
-    NSString *_path;
-    NSString *_name;
-    UIImage *_image;
-}
+@interface BundleImageImageProvider : NSObject
 
 @property (nonatomic, strong, readonly) UIImage *image;
+
 @property (nonatomic, copy, nullable) BundleImageProviderHandler provider;
 @property (nonatomic, copy, nullable) BundleImageProcessHandler process;
 
-+ (instancetype _Nullable)providerWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache;
++ (instancetype _Nullable)providerWithImageName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(BundleImageBundle *)bundle cache:(BundleImageCache<NSString*, UIImage *> *)cache directly:(BOOL)directly andCatalog:(BOOL)andCatalog;
 
 @end
 

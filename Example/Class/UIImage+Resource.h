@@ -11,7 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface UIImage (Resource)
-
++ (NSBundle *)resourceBundle ;
 + (UIImage *_Nullable)pngImageNamed:(NSString *)name;
 + (UIImage *_Nullable)webpImageNamed:(NSString *)name;
 + (UIImage *_Nullable)jpgImageNamed:(NSString *)name;

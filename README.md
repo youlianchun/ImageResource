@@ -35,24 +35,6 @@
 ## Example （BundleImage）
 
 ```
-//开启 debug
-/*
-BundleImage 内部做了资源索引，当版本号与索引版本号不一致或不存在时候会执行更新  
-DEBUG 模式下App启动执行 ```[BundleImage debugProvider]```，将会清除资源索引
-*/
-#if DEBUG
-#import <BundleImage/BundleImage.h>
-#endif
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-#if DEBUG
-    [BundleImage debugProvider];
-#endif
-    return YES;
-}
-```
-
-```
 //默认方式 加载图片
 + (UIImage *)imageNamed:(NSString *)name
     NSBundle *bundle = xxx;
@@ -62,16 +44,7 @@ DEBUG 模式下App启动执行 ```[BundleImage debugProvider]```，将会清除�
     // UIImage *image = [BundleImage imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
 }
 ```
-```
-//YYImage 加载图片
-+ (UIImage *)yy_imageNamed:(NSString *)name
-    NSBundle *bundle = xxx;
-    UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypePNG inBundle:bundle];
-    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeJPG inBundle:bundle];
-    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeGIF inBundle:bundle];
-    // UIImage *image = [BundleImage yy_imageNamed:name type:BundleImageTypeWEBP inBundle:bundle];
-} 
-```
+
 ```
 //自定义 加载图片
 + (void)prepareIfNeed {

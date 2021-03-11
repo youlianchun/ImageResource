@@ -35,4 +35,5 @@ NS_ASSUME_NONNULL_BEGIN
 @interface BundleImageCache(lock)
 - (void)lockBlock:(void(^)(void))block;
 @end
+
 NS_ASSUME_NONNULL_END

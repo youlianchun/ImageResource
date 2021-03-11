@@ -6,60 +6,64 @@
 //
 
 #import "BundleImage.h"
+#import "BundleImageImageProvider.h"
+#import <ImageDynamicAsset/ImageDynamicAsset.h>
+#import "BundleImageCache.h"
 #import "BundleImageBundle.h"
 #import "BundleImageHandler.h"
-#import "BundleImageProvider.h"
-#import "BundleImageCache.h"
-#import <ImageDynamicAsset/ImageDynamicAsset.h>
 #import "pthread.h"
 
 @implementation BundleImage
+{
+    BundleImageCache<NSString*, BundleImageBundle *> *_bundleCache;
+    NSMutableDictionary<NSString*, BundleImageHandler *> *_handlerCache;
+    BundleImageCache<NSString*, UIImage *> *_imageCache;
+    pthread_mutex_t _mutex_t;
+}
 
-static NSUInteger const kBIBundleCacheCapacity = 50;
-static NSUInteger const kBIImageCacheCapacity = 50;
-
-+ (instancetype)shareInstance {
-    static BundleImage *_kBundleImageShareInstance = nil;
++ (instancetype)shareProvider {
+    static BundleImage *kImageProvider = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _kBundleImageShareInstance = [[self alloc] init];
+        kImageProvider = [[self alloc] init];
     });
-    return _kBundleImageShareInstance;
+    return kImageProvider;
 }
 
 - (instancetype)init {
     self = [super init];
-    _bundleCache = [[BundleImageCache alloc] initWithCapacity:kBIBundleCacheCapacity];
-    _imageCache = [[BundleImageCache alloc] initWithCapacity:kBIImageCacheCapacity];
+    _bundleCache = [[BundleImageCache alloc] initWithCapacity:5];
     _handlerCache = [NSMutableDictionary dictionary];
+    _imageCache = [[BundleImageCache alloc] initWithCapacity:50];
     pthread_mutex_init(&_mutex_t, NULL);
     return self;
 }
 
-- (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
-    [self imageHandlerWithBundle:bundle init:YES].imageProvider = imageProvider;
-}
-
-- (void)setImageProcess:(BundleImageProcessHandler)imageProcess inBundle:(NSBundle *_Nullable)bundle {
-    [self imageHandlerWithBundle:bundle init:YES].imageProcess = imageProcess;
-
-}
-
-- (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
-    [self imageHandlerWithBundle:bundle init:YES].dynamicAssetHandler = dynamicAssetHandler;
+- (void)dealloc {
+    [_imageCache clean];
+    _imageCache = nil;
+    [_handlerCache removeAllObjects];
+    _handlerCache = nil;
+    [_bundleCache clean];
+    _bundleCache = nil;
+    pthread_mutex_destroy(&_mutex_t);
 }
 
 - (BundleImageHandler *)imageHandlerWithBundle:(NSBundle *)bundle init:(BOOL)init {
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
-    NSString *key = bundle.resourcePath;
-    if (!key) return nil;
+    NSString *key = bundle.bundlePath;
+    if (key.length == 0) return nil;
+    
+    BundleImageHandler *handler = nil;
     pthread_mutex_lock(&_mutex_t);
-    BundleImageHandler *handler = _handlerCache[bundle.resourcePath];
-    if (!handler && init) {
-        handler = [BundleImageHandler new];
-        _handlerCache[bundle.resourcePath] = handler;
+    if (key) {
+        handler = _handlerCache[key];
+        if (!handler && init) {
+            handler = [BundleImageHandler new];
+            _handlerCache[key] = handler;
+        }
     }
     pthread_mutex_unlock(&_mutex_t);
     return handler;
@@ -69,35 +73,59 @@ static NSUInteger const kBIImageCacheCapacity = 50;
     if (!bundle) {
         bundle = [NSBundle mainBundle];
     }
-    NSString *key = bundle.resourcePath;
-    if (!key) return nil;
-    __block BOOL isNew = NO;
-    __weak typeof(_bundleCache) bundleCache = _bundleCache;
+    NSString *key = bundle.bundlePath;
+    if (key.length == 0) return nil;
+    BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:YES];
     BundleImageBundle *imageBundle = [_bundleCache objectForKey:key init:^BundleImageBundle * _Nonnull{
-        BundleImageBundle *imageBundle = [[BundleImageBundle alloc] initWithBundle:bundle];
-        [imageBundle setDidAnalysisCallback:^{
+        return [[BundleImageBundle alloc] initWithBundle:bundle];
+    }];
+    
+    if (handler.indirect) {
+        __weak typeof(_bundleCache) bundleCache = _bundleCache;
+        BOOL needProtect = [imageBundle analysisBundleIfNeed:^{
             [bundleCache unprotect:key];
         }];
-        isNew = YES;
-        return imageBundle;
-    }];
-    if (isNew && !imageBundle.didAnalysis) {
-        [_bundleCache protect:key];
+        if (needProtect) {
+            [_bundleCache protect:key];
+        }
     }
+    
     return imageBundle;
+}
+
+- (void)setIndirect:(BOOL)indirect inBundle:(NSBundle *_Nullable)bundle {
+    [self imageHandlerWithBundle:bundle init:YES].indirect = indirect;
+}
+
+- (void)setAndCatalog:(BOOL)andCatalog inBundle:(NSBundle *_Nullable)bundle {
+    [self imageHandlerWithBundle:bundle init:YES].andCatalog = andCatalog;
+}
+
+- (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
+    [self imageHandlerWithBundle:bundle init:YES].imageProvider = imageProvider;
+}
+
+- (void)setImageProcess:(BundleImageProcessHandler)imageProcess inBundle:(NSBundle *_Nullable)bundle {
+    [self imageHandlerWithBundle:bundle init:YES].imageProcess = imageProcess;
+}
+
+- (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
+    [self imageHandlerWithBundle:bundle init:YES].dynamicAssetHandler = dynamicAssetHandler;
 }
 
 - (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
-    
+    if (!imageBundle) {
+        return nil;
+    }
     BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:NO];
     
     @autoreleasepool {
-        BundleImageProvider *lightIndex = [BundleImageProvider providerWithImageName:name type:type dark:NO inBundle:imageBundle cache:_imageCache];
+        BundleImageImageProvider *lightIndex = [BundleImageImageProvider providerWithImageName:name type:type dark:NO inBundle:imageBundle cache:_imageCache directly:handler.indirect andCatalog:handler.andCatalog];
         lightIndex.provider = handler.imageProvider;
         lightIndex.process = handler.imageProcess;
         if (@available(iOS 13.0, *)) {
-            BundleImageProvider *darkIndex = [BundleImageProvider providerWithImageName:name type:type dark:YES inBundle:imageBundle cache:_imageCache];
+            BundleImageImageProvider *darkIndex = [BundleImageImageProvider providerWithImageName:name type:type dark:YES inBundle:imageBundle cache:_imageCache directly:handler.indirect andCatalog:handler.andCatalog];
             darkIndex.provider = handler.imageProvider;
             darkIndex.process = handler.imageProcess;
 
@@ -139,44 +167,53 @@ static NSUInteger const kBIImageCacheCapacity = 50;
 
 - (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
-    return [imageBundle imageNamesWithType:type];
+    BundleImageHandler *handler = [self imageHandlerWithBundle:bundle init:NO];
+    if (handler.indirect) {
+        return [imageBundle indirectImageNamesWithType:type];
+    }else {
+        return [imageBundle directlyImageNamesWithType:type];
+    }
 }
 
 - (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {
     BundleImageBundle *imageBundle = [self imageBundle:bundle];
-    return [imageBundle imagePathForName:name type:type dark:dark];
+    return [imageBundle indirectImagePathForName:name type:type dark:dark];
+}
+
+
++ (void)setIndirect:(BOOL)indirect inBundle:(NSBundle *_Nullable)bundle {
+    [[self shareProvider] setIndirect:indirect inBundle:bundle];
+}
+
++ (void)setAndCatalog:(BOOL)andCatalog inBundle:(NSBundle *_Nullable)bundle {
+    [[self shareProvider] setAndCatalog:andCatalog inBundle:bundle];
 }
 
 + (void)setImageProvider:(BundleImageProviderHandler)imageProvider inBundle:(NSBundle *_Nullable)bundle {
-    [[self shareInstance] setImageProvider:imageProvider inBundle:bundle];
-}
-
-+ (void)setImageProcess:(BundleImageProcessHandler)imageProcess inBundle:(NSBundle *_Nullable)bundle {
-    [[self shareInstance] setImageProcess:imageProcess inBundle:bundle];
+    [[self shareProvider] setImageProvider:imageProvider inBundle:bundle];
 }
 
 + (void)setDynamicAssetHandler:(BundleImageyDnamicAssetHandler)dynamicAssetHandler inBundle:(NSBundle *_Nullable)bundle API_AVAILABLE(ios(13.0)) {
-    [[self shareInstance] setDynamicAssetHandler:dynamicAssetHandler inBundle:bundle];
+    [[self shareProvider] setDynamicAssetHandler:dynamicAssetHandler inBundle:bundle];
 }
 
-+ (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *)bundle {
-    return [[self shareInstance] imagePathForName:name type:type dark:dark inBundle:bundle];
++ (void)setImageProcess:(BundleImageProcessHandler)imageProcess inBundle:(NSBundle *_Nullable)bundle {
+    [[self shareProvider] setImageProcess:imageProcess inBundle:bundle];
 }
 
-+ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *)bundle {
-    return [[self shareInstance] imageNamed:name type:type inBundle:bundle];
++ (NSString *_Nullable)imagePathForName:(NSString *)name type:(BundleImageType)type dark:(BOOL)dark inBundle:(NSBundle *_Nullable)bundle {
+    if (name.length == 0 || type.length == 0) return nil;
+    return [[self shareProvider] imagePathForName:name type:type dark:dark inBundle:bundle];
 }
 
-+ (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *)bundle {
-    return [[self shareInstance] imageNamesWithType:type inBundle:bundle];
++ (UIImage *_Nullable)imageNamed:(NSString *)name type:(BundleImageType)type inBundle:(NSBundle *_Nullable)bundle {
+    if (name.length == 0 || type.length == 0) return nil;
+    return [[self shareProvider] imageNamed:name type:type inBundle:bundle];
 }
-@end
 
-
-@implementation BundleImage (debug)
-
-+ (void)debugMode {
-    [BundleImageBundle cleanAsset];
++ (NSArray<NSString *> *_Nullable)imageNamesWithType:(BundleImageType)type inBundle:(NSBundle *_Nullable)bundle {
+    if (type.length == 0) return nil;
+    return [[self shareProvider] imageNamesWithType:type inBundle:bundle];
 }
 
 @end

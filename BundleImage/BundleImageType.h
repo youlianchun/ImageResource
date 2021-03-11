@@ -16,16 +16,20 @@
 
 typedef NSString * BundleImageType;
 
+/// 查找资源文件，andCatalog == YES 时候无资文件源将查找 Catalog
 static BundleImageType const _Nonnull BundleImageTypePNG = @"PNG";
 static BundleImageType const _Nonnull BundleImageTypeWEBP = @"WEBP";
 static BundleImageType const _Nonnull BundleImageTypeJPG = @"JPG";
 static BundleImageType const _Nonnull BundleImageTypeGIF = @"GIF";
 
-static NSString * const _Nonnull BundleImageDarkMode = @"_DARKMODE";
+/// 直接查找Catalog data 图片资源，类型由 data 决定
+static BundleImageType const _Nonnull BundleImageTypeCatalog = @"CATALOG";
+
+static NSString *const _Nonnull BundleImageDarkModeSuffix = @"_DARKMODE";
 
 
 @class ImageDynamicAsset;
-typedef UIImage *_Nullable(^BundleImageProviderHandler)(NSString *_Nonnull file, BundleImageType _Nonnull type);
+typedef UIImage *_Nullable(^BundleImageProviderHandler)(NSString *_Nonnull identifier, BundleImageType _Nonnull type, NSData *_Nonnull data, NSString *_Nonnull name, CGFloat scale);
 typedef UIImage *_Nullable(^BundleImageProcessHandler)(UIImage *_Nonnull image, NSString *_Nonnull name, BundleImageType _Nonnull type);
 
 typedef ImageDynamicAsset *_Nonnull(^BundleImageyDnamicAssetHandler)(UIImage *_Nullable(^_Nonnull imageProviderHandler)(UIUserInterfaceStyle style)) API_AVAILABLE(ios(13.0));

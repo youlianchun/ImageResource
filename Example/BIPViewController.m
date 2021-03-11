@@ -20,17 +20,17 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self gif];
+//    [self gif];
 //    return;
     self.datas = [UIImage webpImageNames];
     [self.view addSubview:self.tableView];
-    [self pathImage];
-    [self process];
+//    [self pathImage];
+//    [self process];
 
     // Do any additional setup after loading the view.
 }
 - (void)gif {
-    UIImage *image = [BundleImage imageNamed:@"animation_gif" type:BundleImageTypeWEBP inBundle:nil];
+    UIImage *image = [BundleImage imageNamed:@"animation_gif" type:BundleImageTypeWEBP inBundle:[UIImage resourceBundle]];
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
     imageView.center = CGPointMake(50, 200);
     [self.view addSubview:imageView];
@@ -39,8 +39,8 @@
 
 }
 - (void)pathImage {
-    UIImage *image0 = [BundleImage imageNamed:@"find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
-    UIImage *image1 = [BundleImage imageNamed:@"Resource/WebP/duplication/find_btn_publish_article" type:BundleImageTypeWEBP inBundle:nil];
+    UIImage *image0 = [BundleImage imageNamed:@"find_btn_publish_article" type:BundleImageTypeWEBP inBundle:[UIImage resourceBundle]];
+    UIImage *image1 = [BundleImage imageNamed:@"Resource/WebP/duplication/find_btn_publish_article" type:BundleImageTypeWEBP inBundle:[UIImage resourceBundle]];
     UIImageView *imageView0 = [[UIImageView alloc] initWithImage:image0];
     UIImageView *imageView1 = [[UIImageView alloc] initWithImage:image1];
     imageView0.center = CGPointMake(50, 200);

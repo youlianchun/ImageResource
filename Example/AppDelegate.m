@@ -21,9 +21,6 @@
     NSString *path = [[NSBundle mainBundle] pathForResource:@"resource" ofType:@"bundle"];
     NSBundle *bundle = [NSBundle bundleWithPath:path];
     NSLog(@"");
-#if DEBUG
-    [BundleImage debugMode];
-#endif
     
     return YES;
 }

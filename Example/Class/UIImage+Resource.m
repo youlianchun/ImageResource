@@ -21,6 +21,8 @@ typedef UIImage YYImage;
 
 @implementation UIImage (Resource)
 + (NSBundle *)resourceBundle {
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"resource" ofType:@"bundle"];
+    return [NSBundle bundleWithPath:path];
     return [NSBundle mainBundle];
 }
 

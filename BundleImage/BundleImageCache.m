@@ -9,34 +9,34 @@
 #import <UIKit/UIApplication.h>
 #import "pthread.h"
 
-@interface _BICacheNode<KeyType, ObjectType> : NSObject
+@interface _XMBICacheNode<KeyType, ObjectType> : NSObject
 @property (nonatomic, strong, readonly) ObjectType value;
 @property (nonatomic, strong, readonly) KeyType<NSCopying> key;
-@property (nonatomic, strong) _BICacheNode<KeyType, ObjectType> *next;
-@property (nonatomic, weak) _BICacheNode<KeyType, ObjectType> *prev;
+@property (nonatomic, strong) _XMBICacheNode<KeyType, ObjectType> *next;
+@property (nonatomic, weak) _XMBICacheNode<KeyType, ObjectType> *prev;
 @property (nonatomic, assign) time_t time;
 @property (nonatomic, assign) BOOL protect;
 @end
 
-@implementation _BICacheNode
+@implementation _XMBICacheNode
 + (instancetype _Nullable)nodeWithValue:(id)value key:(id<NSCopying>)key {
     if (value == nil || key == nil) return nil;
-    _BICacheNode *node = [self new];
+    _XMBICacheNode *node = [self new];
     node->_value = value;
     node->_key = key;
     return node;
 }
-
 @end
 
 
 @implementation BundleImageCache
 {
     pthread_mutex_t _mutex_t;
-    NSMutableDictionary<id<NSCopying>, _BICacheNode *> *_dict;
-    _BICacheNode *_headNode;
-    __weak _BICacheNode *_tailNode;
+    NSMutableDictionary<id<NSCopying>, _XMBICacheNode *> *_dict;
+    _XMBICacheNode *_headNode;
+    __weak _XMBICacheNode *_tailNode;
 }
+
 
 - (instancetype)initWithCapacity:(NSUInteger)capacity {
     self = [super init];
@@ -44,6 +44,7 @@
         pthread_mutex_init(&_mutex_t, NULL);
         _dict = [NSMutableDictionary dictionary];
         _capacity = capacity;
+        
         [[NSNotificationCenter defaultCenter] removeObserver:self];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didReceiveMemoryWarningNotification) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
     }
@@ -64,11 +65,11 @@
 }
 
 - (void)removeNodeForKey:(id<NSCopying>)key {
-    _BICacheNode *node = _dict[key];
+    _XMBICacheNode *node = _dict[key];
     if (!node) return;
     
-    _BICacheNode *prev = node.prev;
-    _BICacheNode *next = node.next;
+    _XMBICacheNode *prev = node.prev;
+    _XMBICacheNode *next = node.next;
     node.next = nil;
     node.prev = nil;
     _dict[key] = nil;
@@ -93,7 +94,7 @@
     BOOL protect = _dict[key].protect && [object isEqual:_dict[key].value];
     [self removeNodeForKey:key];
     if (object) {
-        _BICacheNode *node = [_BICacheNode nodeWithValue:object key:key];
+        _XMBICacheNode *node = [_XMBICacheNode nodeWithValue:object key:key];
         node.time = time(NULL);
         node.protect = protect;
         _dict[key] = node;
@@ -105,7 +106,7 @@
         _headNode = node;
         if (_capacity > 0) {
             NSInteger redundant = _dict.count - _capacity;
-            _BICacheNode *node = _tailNode;
+            _XMBICacheNode *node = _tailNode;
             for (NSInteger i = 0; i < redundant && node; i++) {
                 if (node.protect) {
                     node = node.prev;
@@ -123,11 +124,11 @@
 }
 
 - (id)_objectForKey:(id<NSCopying>)key {
-    _BICacheNode *node = _dict[key];
+    _XMBICacheNode *node = _dict[key];
     if (node) {
         if (node != _headNode) {
-            _BICacheNode *prev = node.prev;
-            _BICacheNode *next = node.next;
+            _XMBICacheNode *prev = node.prev;
+            _XMBICacheNode *next = node.next;
             prev.next = next;
             next.prev = prev;
             
@@ -159,11 +160,11 @@
 
 - (id)objectForKey:(id<NSCopying>)key {
     if (!key) return nil;
-    id object = nil;
+    id value = nil;
     pthread_mutex_lock(&_mutex_t);
-    object = [self _objectForKey:key];
+    value = [self _objectForKey:key];
     pthread_mutex_unlock(&_mutex_t);
-    return object;
+    return value;
 }
 
 - (void)clean {
@@ -218,7 +219,7 @@
     if (pt <= 0) return;
     pthread_mutex_lock(&_mutex_t);
     time_t t = time(NULL);
-    _BICacheNode *node = _tailNode;
+    _XMBICacheNode *node = _tailNode;
     while (node) {
         if (node.protect || t - node.time < pt) {
             node = node.prev;

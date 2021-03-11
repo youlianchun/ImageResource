@@ -10,7 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface UIImage (BIWebP)
-+ (UIImage *)webpImageWithContentsOfFile:(NSString *)file;
++ (UIImage *)bi_webpImageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
 NS_ASSUME_NONNULL_END
